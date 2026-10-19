@@ -111,7 +111,13 @@ From the fix plan; details and reasoning in [PROJECT-DEEP-DIVE.md §18](PROJECT-
 | 15 | Remove dead files (`packages/ui`, template routes, …); `image.png` already gone | B13 | 4 | ☐ planned (image.png ✔) | |
 | 16 | Mark `HIRING_COMMITTEE_REVIEW.md` historical; refresh README and reports | D1 | 4 | ☐ planned | |
 
-Open decisions before Phase 2 (from the plan): new end endpoint/statuses OK? retry cap with manual Try again OK? deny owner-less interviews? delete the LinkedIn experiment?
+**Decisions (2026-10-19):**
+- **Fix 7:** add the explicit end endpoint and the `InProgress` → `Ended` statuses; results show "Finishing your transcript…" until the call has ended.
+- **Fix 9:** cap automatic grading retries at 3; after that the user clicks Try again, which calls a retry endpoint.
+- **Fix 13:** deny access to interviews with no owner (no production data exists).
+- **Fix 15:** keep `experiments/linkedin-scraper.js`, labelled as an unwired experiment.
+
+**Execution order:** one commit per fix, pushed separately. Phase 1 adds a `.gitattributes` commit first (line endings). Verification after each phase: type-check, lint, the full test suite against Postgres, CI on GitHub; Phase 2 also gets a live voice call.
 
 ---
 
