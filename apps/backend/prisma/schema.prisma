@@ -36,6 +36,8 @@ model Message {
   interviewId     String
   interview       Interview   @relation(fields: [interviewId], references: [id])
   createdAt       DateTime    @default(now())
+  // OpenAI's conversation item id: makes saving a turn idempotent.
+  itemId          String?     @unique
 
   // Every results poll loads an interview's messages in order.
   @@index([interviewId, createdAt])

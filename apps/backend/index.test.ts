@@ -236,6 +236,20 @@ describe.skipIf(!process.env.DATABASE_URL)("API integration", () => {
         expect(res.headers["x-powered-by"]).toBeUndefined();
     });
 
+    test("saving the same OpenAI item twice keeps one message, timed by when it was spoken", async () => {
+        const { sidebandStore } = await import("./sideband");
+        const { id } = await createInterview();
+        const itemId = `item_${crypto.randomUUID()}`;
+        const spokenAt = new Date("2026-01-01T00:00:05Z");
+
+        await sidebandStore.saveMessage({ interviewId: id, type: "User", message: "hello", itemId, spokenAt });
+        await sidebandStore.saveMessage({ interviewId: id, type: "User", message: "hello", itemId, spokenAt });
+
+        const rows = await prisma.message.findMany({ where: { interviewId: id } });
+        expect(rows).toHaveLength(1);
+        expect(rows[0]!.createdAt.toISOString()).toBe(spokenAt.toISOString());
+    });
+
     test("GET /api/v1/result/:id 404s for an unknown interview", async () => {
         const res = await request(app).get("/api/v1/result/00000000-0000-0000-0000-000000000000");
         expect(res.status).toBe(404);
