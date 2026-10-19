@@ -55,8 +55,7 @@ const ensureSession: RequestHandler = (req, res, next) => {
 
 app.use(ensureSession);
 
-// Interviews with no ownerId predate this check and stay open — this app has
-// no production data to retroactively lock down.
+// Only the browser session that created an interview can read or act on it.
 const requireOwner: RequestHandler<{ interviewId: string }> = async (req, res, next) => {
   const interview = await prisma.interview.findFirst({
     where: { id: req.params.interviewId }
@@ -67,7 +66,9 @@ const requireOwner: RequestHandler<{ interviewId: string }> = async (req, res, n
     return;
   }
 
-  if (interview.ownerId && interview.ownerId !== req.sessionId) {
+  // Interviews created before ownership existed have no owner; nobody can
+  // prove they own them, so they're closed too (there's no production data).
+  if (interview.ownerId !== req.sessionId) {
     res.status(403).json({ message: "Forbidden" });
     return;
   }

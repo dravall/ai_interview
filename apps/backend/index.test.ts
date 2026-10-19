@@ -198,6 +198,13 @@ describe.skipIf(!process.env.DATABASE_URL)("API integration", () => {
         expect((await stranger.post(`/api/v1/result/${id}/retry`)).status).toBe(403);
     });
 
+    test("interviews without an owner are closed to everyone", async () => {
+        const { agent, id } = await createInterview({ ownerId: null });
+
+        expect((await agent.get(`/api/v1/result/${id}`)).status).toBe(403);
+        expect((await request(app).get(`/api/v1/result/${id}`)).status).toBe(403);
+    });
+
     test("GET /api/v1/result/:id 404s for an unknown interview", async () => {
         const res = await request(app).get("/api/v1/result/00000000-0000-0000-0000-000000000000");
         expect(res.status).toBe(404);
