@@ -1,7 +1,8 @@
 import { api } from "@/lib/api";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
-import { CircleAlert, LoaderCircle, MessageSquare, Plus, RotateCcw } from "lucide-react";
+import { isAxiosError } from "axios";
+import { CircleAlert, LoaderCircle, MessageSquare, Plus, RotateCcw, SearchX, WifiOff } from "lucide-react";
 import { Button } from "./ui/button";
 import { Brand } from "./Brand";
 import { cn } from "@/lib/utils";
@@ -25,20 +26,33 @@ export function Result() {
     });
     const [retryKey, setRetryKey] = useState(0);
     const [slow, setSlow] = useState(false);
+    // "not-found": the id is unknown or belongs to another browser session (404/403).
+    // "network": the request itself failed; polling keeps going.
+    const [loadError, setLoadError] = useState<"not-found" | "network" | null>(null);
     const tryAgainRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
-        const fetchResult = () =>
-            api.get(`/api/v1/result/${interviewId}`).then((response) => {
+        const fetchResult = async () => {
+            try {
+                const response = await api.get(`/api/v1/result/${interviewId}`);
                 setResult(response.data);
-                return response.data.status as ResultData["status"];
-            });
+                setLoadError(null);
+                const s = response.data.status as ResultData["status"];
+                if (s === "Done" || s === "Failed") clearInterval(intervalId);
+            } catch (error) {
+                const status = isAxiosError(error) ? error.response?.status : undefined;
+                if (status === 404 || status === 403) {
+                    setLoadError("not-found");
+                    clearInterval(intervalId);
+                } else {
+                    setLoadError("network");
+                }
+            }
+        };
 
+        setLoadError(null);
+        const intervalId = setInterval(fetchResult, 5000);
         fetchResult();
-        const intervalId = setInterval(async () => {
-            const s = await fetchResult();
-            if (s === "Done" || s === "Failed") clearInterval(intervalId);
-        }, 5000);
 
         setSlow(false);
         const slowTimer = setTimeout(() => setSlow(true), SLOW_GRADING_MS);
@@ -70,7 +84,21 @@ export function Result() {
             </header>
 
             <main className="mx-auto w-full max-w-[640px] px-4 py-14">
-                {failed ? (
+                {loadError === "not-found" ? (
+                    <div role="alert" className="flex flex-col items-center rounded-xl border px-6 py-16 text-center">
+                        <span className="grid size-14 place-items-center rounded-full bg-muted text-muted-foreground">
+                            <SearchX aria-hidden className="size-6" />
+                        </span>
+                        <h1 className="mt-5 text-xl font-semibold">Interview not found</h1>
+                        <p className="mt-2 max-w-[400px] text-sm leading-relaxed text-muted-foreground">
+                            This link doesn’t match an interview started in this browser. Results are only
+                            visible to the browser that ran the interview.
+                        </p>
+                        <Button asChild size="lg" className="mt-6">
+                            <Link to="/">Start a new interview</Link>
+                        </Button>
+                    </div>
+                ) : failed ? (
                     <div role="alert" className="flex flex-col items-center rounded-xl border px-6 py-16 text-center">
                         <span className="grid size-14 place-items-center rounded-full bg-destructive-subtle text-destructive-text">
                             <CircleAlert aria-hidden className="size-6" />
@@ -91,7 +119,7 @@ export function Result() {
                         </div>
                     </div>
                 ) : !ready ? (
-                    <Grading slow={slow} />
+                    <Grading slow={slow} offline={loadError === "network"} />
                 ) : (
                     <Done result={result} />
                 )}
@@ -100,7 +128,7 @@ export function Result() {
     );
 }
 
-function Grading({ slow }: { slow: boolean }) {
+function Grading({ slow, offline }: { slow: boolean; offline: boolean }) {
     return (
         <div>
             <h1 className="sr-only">Interview results</h1>
@@ -112,10 +140,17 @@ function Grading({ slow }: { slow: boolean }) {
                         We’re scoring your answers and writing feedback. This page updates by itself, usually
                         within a minute.
                     </p>
-                    {slow && (
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Taking longer than usual. You can leave this page and come back.
+                    {offline ? (
+                        <p className="mt-2 flex items-center gap-1.5 text-sm text-destructive-text">
+                            <WifiOff aria-hidden className="size-3.5" />
+                            Can’t reach the server. Retrying…
                         </p>
+                    ) : (
+                        slow && (
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                Taking longer than usual. You can leave this page and come back.
+                            </p>
+                        )
                     )}
                 </div>
             </div>
