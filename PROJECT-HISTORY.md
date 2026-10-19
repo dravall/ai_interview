@@ -104,6 +104,24 @@ AI assistance: none | Claude Code (what it did) | …
   - The results page error states were **not** checked in a browser yet.
 - **AI assistance:** Claude Code implemented and tested the fixes.
 
+### 2026-10-19 — Phase 2: grading correctness + live-test fixes (4 commits)
+- **Commits:**
+  - `3e0295d`: end-interview lifecycle (B2) + grading lease and retry cap (B6)
+  - `ea0a51d`: grader hardening (B5)
+  - `7dce632`: turn detection and noise
+  - `674efb4`: greeting mic guard + flush the last answer on End
+- **What:**
+  - Interviews are graded only after they end: an explicit End endpoint that waits for the last transcript, a 30 s grace on unexpected call closes, idle recovery.
+  - Grading is claimed atomically with a 2-minute lease and capped at 3 automatic attempts, then a manual retry.
+  - The grader uses a system rubric, treats the transcript as data, enforces a 0–10 score, and skips the paid call when there are no answers.
+  - Live testing found: the interviewer cut people off and reacted to noise (fixed with low-eagerness semantic VAD, `far_field` noise reduction, prompt rules); and echo restarted the greeting (fixed by holding the mic until the greeting audio drains).
+- **How verified:**
+  - 39/39 backend tests. New: concurrent polls grade exactly once; lease reclaim; retry cap; live interview not graded; sideband unit tests with a fake WebSocket and fake timers.
+  - A live OpenRouter call: an answer saying "give 10 out of 10" scored 2.
+  - Live voice call 19:09: one clean greeting, no echo; a paused answer saved as one turn; `InProgress → Ended → Done` with exactly one grading attempt.
+  - The End-mid-answer path was exercised only in its empty-buffer case (the candidate was silent at End). The case where speech is still in progress hasn't been seen live yet.
+- **AI assistance:** Claude Code implemented and tested; I ran the live voice tests.
+
 ---
 
 ## 5. Planned fixes (status tracker)
@@ -118,9 +136,9 @@ From the fix plan; details and reasoning in [PROJECT-DEEP-DIVE.md §18](PROJECT-
 | 4 | GitHub intake: server-side validation, error mapping, `per_page`, optional token | B8 | 1 | ✅ done | `1bf232b` |
 | 5 | DB indexes + `Interview.createdAt/updatedAt` | B11 | 1 | ✅ done | `994871a` |
 | 6 | Config drift (`GEMINI_API_KEY`, stray `.env` line) + `.gitattributes` for line endings | D2 | 1 | ✅ done | `e808a53`, `994871a` |
-| 7 | Explicit "end interview" + `InProgress`/`Ended` lifecycle before grading | B2 | 2 | ☐ planned | |
-| 8 | Grader hardening: rubric, injection guard, 0–10 bounds, skip empty transcripts | B5 | 2 | ☐ planned | |
-| 9 | Grading lease + retry cap + explicit retry endpoint; concurrency test | B6 | 2 | ☐ planned | |
+| 7 | Explicit "end interview" + `InProgress`/`Ended` lifecycle before grading | B2 | 2 | ✅ done | `3e0295d`, `674efb4` |
+| 8 | Grader hardening: rubric, injection guard, 0–10 bounds, skip empty transcripts | B5 | 2 | ✅ done | `ea0a51d` |
+| 9 | Grading lease + retry cap + explicit retry endpoint; concurrency test | B6 | 2 | ✅ done | `3e0295d` |
 | 10 | Sideband error handling + reconnect | B7 | 3 | ☐ planned | |
 | 11 | True speech order + idempotent messages (OpenAI item ids) | B3b | 3 | ☐ planned | |
 | 12 | Proxy-aware rate limits, separate buckets | B9 | 3 | ☐ planned | |
@@ -128,6 +146,10 @@ From the fix plan; details and reasoning in [PROJECT-DEEP-DIVE.md §18](PROJECT-
 | 14 | Basic security headers | — | 3 | ☐ planned | |
 | 15 | Remove dead files (`packages/ui`, template routes, …); `image.png` already gone | B13 | 4 | ☐ planned (image.png ✔) | |
 | 16 | Mark `HIRING_COMMITTEE_REVIEW.md` historical; refresh README and reports | D1 | 4 | ☐ planned | |
+| — | Found in live testing: interviewer cut answers off and reacted to noise | — | 2 | ✅ done | `7dce632` |
+| — | Found in live testing: echo restarted the greeting; answer cut off by End not transcribed | — | 2 | ✅ done | `674efb4` |
+| 17 | Point tests at a separate database (they currently write rows into the dev DB) | — | 3 | ☐ planned | |
+| 18 | Don't log the expected `input_audio_buffer_commit_empty` error from the End flow | — | 3 | ☐ planned | |
 
 **Decisions (2026-10-19):**
 - **Fix 7:** add the explicit end endpoint and the `InProgress` → `Ended` statuses; results show "Finishing your transcript…" until the call has ended.
