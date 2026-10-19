@@ -225,6 +225,17 @@ describe.skipIf(!process.env.DATABASE_URL)("API integration", () => {
         expect(Number(a1.headers["ratelimit-limit"])).toBe(10);
     });
 
+    test("API responses carry security headers and don't advertise Express", async () => {
+        const res = await request(app).get("/api/v1/result/00000000-0000-0000-0000-000000000000");
+
+        expect(res.headers["x-content-type-options"]).toBe("nosniff");
+        expect(res.headers["x-frame-options"]).toBe("DENY");
+        expect(res.headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+        expect(res.headers["referrer-policy"]).toBe("no-referrer");
+        expect(res.headers["cache-control"]).toBe("no-store");
+        expect(res.headers["x-powered-by"]).toBeUndefined();
+    });
+
     test("GET /api/v1/result/:id 404s for an unknown interview", async () => {
         const res = await request(app).get("/api/v1/result/00000000-0000-0000-0000-000000000000");
         expect(res.status).toBe(404);

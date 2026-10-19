@@ -28,6 +28,19 @@ app.use(cors({
   origin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000",
   credentials: true
 }));
+// Baseline hardening for a JSON API: no MIME sniffing, no framing, no referrer
+// leaks, no caching of private interview data, and don't advertise Express.
+app.disable("x-powered-by");
+app.use((_req, res, next) => {
+  res.set({
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+    "Referrer-Policy": "no-referrer",
+    "Cache-Control": "no-store"
+  });
+  next();
+});
 app.use(cookieParser());
 app.use(express.json());
 
