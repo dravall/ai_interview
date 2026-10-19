@@ -4,3 +4,8 @@ node_modules
 .turbo
 dist
 .git
+
+# Secrets: runtime env comes from env_file / the host, never from the image
+**/.env
+**/.env.*
+!**/.env.example
