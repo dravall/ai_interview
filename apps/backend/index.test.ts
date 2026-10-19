@@ -67,6 +67,31 @@ describe.skipIf(!process.env.DATABASE_URL)("API integration", () => {
         expect(res.status).toBe(403);
     });
 
+    test("result transcript comes back in spoken order regardless of insert order", async () => {
+        const { prisma } = await import("./db");
+        const agent = request.agent(app);
+
+        // Create the row directly: earlier tests already used up the intake
+        // rate limit (5 per window) for this test run.
+        const first = await agent.get("/api/v1/result/00000000-0000-0000-0000-000000000000");
+        const sid = /sid=([^;]+)/.exec(String(first.headers["set-cookie"]))![1];
+        const { id: interviewId } = await prisma.interview.create({
+            data: { githubMetadata: "[]", status: "Pre", ownerId: sid }
+        });
+
+        // Insert the later turn first so physical row order disagrees with time.
+        await prisma.message.create({
+            data: { interviewId, type: "User", message: "second", createdAt: new Date("2026-01-01T00:00:02Z") }
+        });
+        await prisma.message.create({
+            data: { interviewId, type: "Assistant", message: "first", createdAt: new Date("2026-01-01T00:00:01Z") }
+        });
+
+        const result = await agent.get(`/api/v1/result/${interviewId}`);
+
+        expect(result.body.transcript.map((m: { content: string }) => m.content)).toEqual(["first", "second"]);
+    });
+
     test("GET /api/v1/result/:id 404s for an unknown interview", async () => {
         const res = await request(app).get("/api/v1/result/00000000-0000-0000-0000-000000000000");
         expect(res.status).toBe(404);

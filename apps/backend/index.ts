@@ -169,7 +169,9 @@ app.get("/api/v1/result/:interviewId", requireOwner, async (req, res) => {
       id: req.params.interviewId
     },
     include: {
-      conversations: true
+      // Without an explicit order Postgres may return rows in any order, which
+      // would scramble both the graded transcript and the one shown to the user.
+      conversations: { orderBy: { createdAt: "asc" } }
     }
   })
 
