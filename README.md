@@ -87,8 +87,16 @@ bun run test          # apps/backend: bun test
 ```
 
 `apps/backend`'s test suite has two layers:
-- **Unit tests** (`types.test.ts`, `result.test.ts`) — no network, no DB, run anywhere.
-- **Integration tests** (`index.test.ts`) — hit the real Express app + Postgres via `supertest`, with `scrapers/github.ts` and `result.ts` mocked so no real GitHub/OpenRouter calls happen. These are skipped automatically when `DATABASE_URL` isn't set; point it at any Postgres (migrated with `bunx prisma migrate deploy`) to run them locally.
+- **Unit tests** (`types.test.ts`, `result.test.ts`, `realtime.test.ts`, `sideband.test.ts`) — no network, no DB, run anywhere.
+- **Integration tests** (`index.test.ts`) — hit the real Express app + Postgres via `supertest`, with `scrapers/github.ts` and `result.ts` mocked so no real GitHub/OpenRouter calls happen.
+
+Locally the tests use a separate database, `ai_interviewer_test`, set in `apps/backend/.env.test` (Bun loads it automatically under `bun test`), so test rows never land in your dev data. Create and migrate it once, with Postgres running:
+
+```bash
+cd apps/backend && bun run test:setup
+```
+
+A real `DATABASE_URL` environment variable overrides `.env.test`; that's how CI points the tests at its own Postgres.
 
 CI (`.github/workflows/ci.yml`) runs all of the above against a throwaway Postgres service container on every push/PR.
 

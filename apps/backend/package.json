@@ -42,6 +42,7 @@
     "start": "bun index.ts",
     "check-types": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "test": "bun test"
+    "test": "bun test",
+    "test:setup": "NODE_ENV=test bun scripts/setup-test-db.ts"
   }
 }
