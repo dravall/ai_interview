@@ -86,6 +86,24 @@ AI assistance: none | Claude Code (what it did) | …
 - **Side effect:** `apps/backend/image.png` was deleted from disk by the rewrite (see §3).
 - **AI assistance:** Claude Code ran the git operations and wrote this file.
 
+### 2026-10-19 — Phase 1 fixes (6 commits)
+- **Commits:** `e808a53` line endings · `8a365b0` B1 · `3ebb364` B3a · `a2914f9` B4 · `1bf232b` B8 · `994871a` B11 + D2.
+- **What:**
+  - `.env` files kept out of Docker images, and the Bun image pinned to 1.3.11.
+  - Transcript returned in spoken order.
+  - Results page shows not-found and network-error states.
+  - GitHub usernames validated server-side; GitHub errors mapped to 404/503; 100 repos fetched; optional `GITHUB_TOKEN` and `INTAKE_RATE_LIMIT`.
+  - Database indexes and interview timestamps added; unused `GEMINI_API_KEY` removed.
+  - Stray `=` line removed from the local `.env` (not tracked).
+- **Why:** see [PROJECT-DEEP-DIVE.md §18](PROJECT-DEEP-DIVE.md#18-bugs-technical-debt--architectural-problems).
+- **How verified:**
+  - Rebuilt both Docker images; only the `.env.example` files remain.
+  - 24/24 backend tests. The new ordering test fails on the old code.
+  - A live GitHub check: real user found, missing user mapped to not-found.
+  - Migration applied cleanly; type-check and lint pass.
+  - The results page error states were **not** checked in a browser yet.
+- **AI assistance:** Claude Code implemented and tested the fixes.
+
 ---
 
 ## 5. Planned fixes (status tracker)
@@ -94,12 +112,12 @@ From the fix plan; details and reasoning in [PROJECT-DEEP-DIVE.md §18](PROJECT-
 
 | # | Fix | Bug | Phase | Status | Commit |
 |---|---|---|---|---|---|
-| 1 | Exclude `.env` from Docker images; pin Bun image tag | B1 | 1 | ☐ planned | |
-| 2 | Order transcript by `createdAt` | B3a | 1 | ☐ planned | |
-| 3 | Results page error states (404/403/network) | B4 | 1 | ☐ planned | |
-| 4 | GitHub intake: server-side validation, error mapping, `per_page`, optional token | B8 | 1 | ☐ planned | |
-| 5 | DB indexes + `Interview.createdAt/updatedAt` | B11 | 1 | ☐ planned | |
-| 6 | Config drift (`GEMINI_API_KEY`, stray `.env` line) + `.gitattributes` for line endings | D2 | 1 | ☐ planned | |
+| 1 | Exclude `.env` from Docker images; pin Bun image tag | B1 | 1 | ✅ done | `8a365b0` |
+| 2 | Order transcript by `createdAt` | B3a | 1 | ✅ done | `3ebb364` |
+| 3 | Results page error states (404/403/network) | B4 | 1 | ✅ done | `a2914f9` |
+| 4 | GitHub intake: server-side validation, error mapping, `per_page`, optional token | B8 | 1 | ✅ done | `1bf232b` |
+| 5 | DB indexes + `Interview.createdAt/updatedAt` | B11 | 1 | ✅ done | `994871a` |
+| 6 | Config drift (`GEMINI_API_KEY`, stray `.env` line) + `.gitattributes` for line endings | D2 | 1 | ✅ done | `e808a53`, `994871a` |
 | 7 | Explicit "end interview" + `InProgress`/`Ended` lifecycle before grading | B2 | 2 | ☐ planned | |
 | 8 | Grader hardening: rubric, injection guard, 0–10 bounds, skip empty transcripts | B5 | 2 | ☐ planned | |
 | 9 | Grading lease + retry cap + explicit retry endpoint; concurrency test | B6 | 2 | ☐ planned | |
