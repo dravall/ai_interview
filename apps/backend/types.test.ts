@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { PreInterviewBody } from "./types";
+import { parseGithubUsername, PreInterviewBody } from "./types";
 
 describe("PreInterviewBody", () => {
     test("accepts a github url string", () => {
@@ -15,5 +15,35 @@ describe("PreInterviewBody", () => {
     test("rejects a non-string github field", () => {
         const result = PreInterviewBody.safeParse({ github: 12345 });
         expect(result.success).toBe(false);
+    });
+});
+
+describe("parseGithubUsername", () => {
+    test("accepts profile URLs in the common shapes", () => {
+        for (const input of [
+            "octocat",
+            "github.com/octocat",
+            "https://github.com/octocat",
+            "https://www.github.com/octocat/",
+            "  http://github.com/octocat?tab=repositories ",
+            "github.com/octo-cat",
+        ]) {
+            expect(parseGithubUsername(input)).toBe(input.includes("octo-cat") ? "octo-cat" : "octocat");
+        }
+    });
+
+    test("rejects repository links, other hosts and invalid usernames", () => {
+        for (const input of [
+            "",
+            "github.com/octocat/hello-world",
+            "https://gitlab.com/octocat",
+            "evil.com/octocat",
+            "-octocat",
+            "octo--cat",
+            "a".repeat(40),
+            "../orgs/x",
+        ]) {
+            expect(parseGithubUsername(input)).toBeNull();
+        }
     });
 });

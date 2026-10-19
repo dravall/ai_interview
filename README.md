@@ -60,6 +60,8 @@ bun run dev
 | `OPENROUTER_API_KEY` | OpenRouter — post-interview grading |
 | `OPENROUTER_MODEL` | Optional grading model slug (default `qwen/qwen3.8-flash`) |
 | `PROXY_URL` | HTTPS proxy for the GitHub scrape (`scrapers/github.ts`) |
+| `GITHUB_TOKEN` | Optional. GitHub API token; raises the limit from 60 to 5,000 requests/hour |
+| `INTAKE_RATE_LIMIT` | Optional. Interviews one IP can start per 15 minutes (default 5) |
 | `FRONTEND_ORIGIN` | CORS allowlist — the origin allowed to call the API with credentials |
 | `NODE_ENV` | `development` \| `production` — controls the session cookie's `secure` flag |
 | `COOKIE_SAMESITE` | Set to `none` only for a cross-domain deployment (see Deployment below); leave unset for local dev |

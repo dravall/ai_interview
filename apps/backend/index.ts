@@ -2,8 +2,8 @@ import express from "express";
 import type { RequestHandler } from "express";
 import cookieParser from "cookie-parser";
 import { rateLimit } from "express-rate-limit";
-import { PreInterviewBody } from "./types";
-import { scrapeGithub } from "./scrapers/github";
+import { parseGithubUsername, PreInterviewBody } from "./types";
+import { scrapeGithub, type GithubLookupError } from "./scrapers/github";
 import cors from "cors";
 import { prisma } from "./db";
 import { initSideband } from "./sideband";
@@ -77,7 +77,8 @@ const requireOwner: RequestHandler<{ interviewId: string }> = async (req, res, n
 
 const preInterviewLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 5,
+  // Each intake costs a GitHub API call; override for load tests or a GITHUB_TOKEN setup.
+  limit: Number(process.env.INTAKE_RATE_LIMIT) || 5,
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -99,12 +100,29 @@ app.post("/api/v1/pre-interview", preInterviewLimiter, async (req, res) => {
         return
     }
 
-    // TODO: URL can be very malformed, probably use an SLM here?
-    const githubUrl = data.github.endsWith("/") ? data.github.slice(0, -1) : data.github;
+    const githubUsername = parseGithubUsername(data.github);
 
-    const githubUsername = githubUrl.split("/").pop()!;
+    if (!githubUsername) {
+        res.status(400).json({
+            message: "Enter a GitHub profile URL like github.com/octocat"
+        });
+        return
+    }
 
-    const githubData = await scrapeGithub(githubUsername);
+    let githubData: Awaited<ReturnType<typeof scrapeGithub>>;
+    try {
+        githubData = await scrapeGithub(githubUsername);
+    } catch (error) {
+        // Checked by `kind` rather than instanceof so tests can mock the scraper module.
+        const kind = (error as Partial<GithubLookupError>).kind;
+        if (kind === "not-found") {
+            res.status(404).json({ message: "No GitHub user at that address" });
+        } else {
+            console.error("GitHub lookup failed:", error);
+            res.status(503).json({ message: "GitHub is unavailable right now. Try again in a minute." });
+        }
+        return
+    }
 
     const interview = await prisma.interview.create({
         data: {

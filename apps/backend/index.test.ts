@@ -2,10 +2,15 @@ import { describe, expect, mock, test } from "bun:test";
 import request from "supertest";
 
 mock.module("./scrapers/github", () => ({
-    scrapeGithub: async () => [
-        { description: "demo", name: "demo-repo", fullName: "user/demo-repo", starCount: 3 },
-    ],
+    scrapeGithub: async (username: string) => {
+        if (username === "missing-user") throw Object.assign(new Error("not found"), { kind: "not-found" });
+        if (username === "busy-user") throw Object.assign(new Error("rate limited"), { kind: "rate-limited" });
+        return [{ description: "demo", name: "demo-repo", fullName: "user/demo-repo", starCount: 3 }];
+    },
 }));
+
+// The suite makes more intake calls than the production limit of 5 per window.
+process.env.INTAKE_RATE_LIMIT ??= "50";
 
 mock.module("./result", () => ({
     calculateResult: async () => ({ feedback: "Nice work overall.", score: 7 }),
@@ -29,6 +34,21 @@ describe.skipIf(!process.env.DATABASE_URL)("API integration", () => {
     test("POST /api/v1/pre-interview rejects an invalid body", async () => {
         const res = await request(app).post("/api/v1/pre-interview").send({});
         expect(res.status).toBe(400);
+    });
+
+    test("POST /api/v1/pre-interview rejects repository links and non-GitHub URLs", async () => {
+        for (const github of ["https://github.com/someone/some-repo", "https://gitlab.com/someone", "a b"]) {
+            const res = await request(app).post("/api/v1/pre-interview").send({ github });
+            expect(res.status).toBe(400);
+        }
+    });
+
+    test("POST /api/v1/pre-interview maps GitHub errors to 404 and 503", async () => {
+        const missing = await request(app).post("/api/v1/pre-interview").send({ github: "github.com/missing-user" });
+        expect(missing.status).toBe(404);
+
+        const busy = await request(app).post("/api/v1/pre-interview").send({ github: "busy-user" });
+        expect(busy.status).toBe(503);
     });
 
     test("POST /api/v1/pre-interview is rate-limited", async () => {
