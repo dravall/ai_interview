@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Overview and theme tokens</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#4F46E5}a:hover{color:#3730A3}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+.k{font:500 12px/1 'Geist Mono',ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:#5F5F67}
+.sw{width:28px;height:28px;border-radius:6px;border:1px solid rgba(10,10,11,.12);flex:none}
+.row{display:grid;grid-template-columns:220px minmax(0,1fr) minmax(0,1fr) 300px;gap:24px;align-items:center;padding:14px 0;border-top:1px solid #E4E4E7}
+.cell{display:flex;align-items:center;gap:12px;min-width:0}
+.v{font:400 12.5px/1.5 'Geist Mono',ui-monospace,monospace;color:#0A0A0B}
+.v2{font:400 12px/1.5 'Geist Mono',ui-monospace,monospace;color:#5F5F67}
+pre{margin:0;white-space:pre;overflow:auto}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 2300px; box-sizing: border-box; padding: 96px 112px; background: #FFFFFF; color: #0A0A0B; display: flex; flex-direction: column; gap: 88px">
+
+<header style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="width: 28px; height: 28px; border-radius: 8px; background: #4F46E5; color: #FFFFFF; display: grid; place-items: center"><svg aria-hidden="true" viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>
+<span style="font-size: 15px; font-weight: 600; letter-spacing: -0.01em">AI Interview Kickstart</span>
+</div>
+<h1 style="margin: 0; font-size: 56px; line-height: 1.05; font-weight: 600; letter-spacing: -0.035em; max-width: 900px">Frontend redesign</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #5F5F67; max-width: 760px">Three screens, every state, light and dark. Neutral zinc palette, one indigo accent, Geist for type. Everything below maps onto shadcn/ui tokens and Tailwind v4 — no new libraries.</p>
+</header>
+
+<section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #0A0A0B; padding-top: 20px">
+<span class="k">01 · One accent</span>
+<p style="margin: 0; font-size: 15px; line-height: 1.6">Indigo means exactly two things: “act here” (primary button, focus ring) and “someone is speaking”. Everything else is grey. Red is reserved for ending the call and errors.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #0A0A0B; padding-top: 20px">
+<span class="k">02 · Motion carries meaning</span>
+<p style="margin: 0; font-size: 15px; line-height: 1.6">The only continuous motion is the voice halo tracking audio level, plus spinners while waiting. Colour/opacity changes run 150 ms ease-out. With reduced motion, the halo stops scaling and becomes a static on/off ring.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #0A0A0B; padding-top: 20px">
+<span class="k">03 · Errors live in the layout</span>
+<p style="margin: 0; font-size: 15px; line-height: 1.6">Every failure is shown inline where it happened, with the fix and a retry. Sonner toasts are optional echoes, never the only signal. Status changes go through one aria-live region per screen.</p>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px">
+<h2 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Theme tokens</h2>
+<span class="v2">All text pairs ≥ 4.5:1 · measured</span>
+</div>
+<div class="row" style="border-top: 0; padding-bottom: 6px">
+<span class="k">Token</span><span class="k">Light (:root)</span><span class="k">Dark (.dark)</span><span class="k">Used for</span>
+</div>
+<sc-for list="{{tokens}}" as="tk" hint-placeholder-count="16">
+<div class="row">
+<span class="v" style="font-weight: 500">{{tk.name}}</span>
+<div class="cell"><span class="sw" style="background: {{tk.lh}}"></span><div style="display: flex; flex-direction: column; min-width: 0"><span class="v">{{tk.lh}}</span><span class="v2">{{tk.lo}}</span></div></div>
+<div class="cell"><span class="sw" style="background: {{tk.dh}}"></span><div style="display: flex; flex-direction: column; min-width: 0"><span class="v">{{tk.dh}}</span><span class="v2">{{tk.do}}</span></div></div>
+<span style="font-size: 13px; line-height: 1.5; color: #5F5F67">{{tk.use}}</span>
+</div>
+</sc-for>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5F5F67; max-width: 900px">Note: shadcn’s <span class="mono">--accent</span> is its hover surface, not the brand colour — it stays neutral. The brand accent is <span class="mono">--primary</span>. Two small additions: <span class="mono">--primary-subtle</span> (speaking orb fill, selected surfaces) and <span class="mono">--destructive-text</span> / <span class="mono">--destructive-subtle</span>, because #DC2626 fails as text on the dark background.</p>
+</section>
+
+<section style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h2 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Type</h2>
+<div style="display: flex; align-items: baseline; gap: 20px; border-top: 1px solid #E4E4E7; padding-top: 16px"><span class="k" style="width: 120px">Score</span><span style="font-size: 96px; line-height: 1; font-weight: 600; letter-spacing: -0.05em">7</span><span class="v2">Geist 600 · 96/1 · −0.05em · tabular</span></div>
+<div style="display: flex; align-items: baseline; gap: 20px; border-top: 1px solid #E4E4E7; padding-top: 16px"><span class="k" style="width: 120px">H1</span><span style="font-size: 32px; line-height: 1.15; font-weight: 600; letter-spacing: -0.025em">Rehearse out loud</span><span class="v2">32/1.15 · 600</span></div>
+<div style="display: flex; align-items: baseline; gap: 20px; border-top: 1px solid #E4E4E7; padding-top: 16px"><span class="k" style="width: 120px">H2</span><span style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em">Feedback</span><span class="v2">18/1.4 · 600</span></div>
+<div style="display: flex; align-items: baseline; gap: 20px; border-top: 1px solid #E4E4E7; padding-top: 16px"><span class="k" style="width: 120px">Body</span><span style="font-size: 15px; line-height: 1.65">Plain-text feedback paragraphs</span><span class="v2">15/1.65 · 400</span></div>
+<div style="display: flex; align-items: baseline; gap: 20px; border-top: 1px solid #E4E4E7; padding-top: 16px"><span class="k" style="width: 120px">Small</span><span style="font-size: 13px; line-height: 1.5; color: #5F5F67">Hints, captions, helper text</span><span class="v2">13/1.5 · 400</span></div>
+<div style="display: flex; align-items: baseline; gap: 20px; border-top: 1px solid #E4E4E7; padding-top: 16px"><span class="k" style="width: 120px">Mono</span><span class="mono" style="font-size: 12px; letter-spacing: .02em">04:12 · QUESTION 2 OF 3</span><span class="v2">Geist Mono 12 · labels, timer</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h2 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Shape &amp; motion</h2>
+<div style="display: grid; grid-template-columns: 140px minmax(0, 1fr); row-gap: 14px; column-gap: 20px; font-size: 14px; line-height: 1.5; border-top: 1px solid #E4E4E7; padding-top: 16px">
+<span class="k">Radius</span><span><span class="mono">--radius: 0.5rem</span> — inputs, buttons 8px · cards 12px · pills full</span>
+<span class="k">Control height</span><span>44px (touch-safe) · icon 16px · gap 8px</span>
+<span class="k">Layout</span><span>Intake column 480px · Interview stage 720px · Results column 640px · page gutter 16px at 375</span>
+<span class="k">Focus</span><span>2px <span class="mono">--ring</span> outline, 2px offset (inputs: border + 3px ring at 25%)</span>
+<span class="k">Elevation</span><span>Light: hairline border + one soft shadow on cards. Dark: border only.</span>
+<span class="k">Transitions</span><span>150ms ease-out on colour, border, opacity</span>
+<span class="k">Audio level</span><span>Per-frame via CSS variable, 80ms linear on transform</span>
+<span class="k">Spinner</span><span>lucide <span class="mono">LoaderCircle</span>, 1s linear; static under reduced motion</span>
+<span class="k">Live dot</span><span>2s opacity pulse 1 → .4; off under reduced motion</span>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px">
+<h2 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">globals.css</h2>
+<span class="v2">Tailwind v4 · shadcn token names</span>
+</div>
+<pre class="mono" style="background: #0A0A0B; color: #EDEDEF; border-radius: 12px; padding: 32px; font-size: 12.5px; line-height: 1.7">@import "tailwindcss";
+@custom-variant dark (&amp;:is(.dark *));
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(1 0 0);                       /* #FFFFFF */
+  --foreground: oklch(0.145 0.002 286.1);           /* #0A0A0B */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0.002 286.1);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0.002 286.1);
+  --primary: oklch(0.511 0.230 277.0);              /* #4F46E5 */
+  --primary-foreground: oklch(1 0 0);
+  --primary-subtle: oklch(0.958 0.020 279.9);       /* #EEF0FF */
+  --secondary: oklch(0.967 0 0);                    /* #F4F4F5 */
+  --secondary-foreground: oklch(0.145 0.002 286.1);
+  --muted: oklch(0.967 0 0);
+  --muted-foreground: oklch(0.488 0.013 285.9);     /* #5F5F67 */
+  --accent: oklch(0.967 0 0);
+  --accent-foreground: oklch(0.145 0.002 286.1);
+  --destructive: oklch(0.577 0.215 27.3);           /* #DC2626 */
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-text: oklch(0.505 0.190 27.5);      /* #B91C1C */
+  --destructive-subtle: oklch(0.971 0.013 17.4);    /* #FEF2F2 */
+  --border: oklch(0.920 0.004 286.3);               /* #E4E4E7 */
+  --input: oklch(0.920 0.004 286.3);
+  --ring: oklch(0.511 0.230 277.0);
+}
+
+.dark {
+  --background: oklch(0.145 0.002 286.1);           /* #0A0A0B */
+  --foreground: oklch(0.947 0.003 286.3);           /* #EDEDEF */
+  --card: oklch(0.179 0.004 286.0);                 /* #111113 */
+  --card-foreground: oklch(0.947 0.003 286.3);
+  --popover: oklch(0.179 0.004 286.0);
+  --popover-foreground: oklch(0.947 0.003 286.3);
+  --primary: oklch(0.704 0.157 278.4);              /* #8B93FF */
+  --primary-foreground: oklch(0.145 0.002 286.1);
+  --primary-subtle: oklch(0.234 0.046 280.4);       /* #1A1B33 */
+  --secondary: oklch(0.228 0.006 285.9);            /* #1C1C1F */
+  --secondary-foreground: oklch(0.947 0.003 286.3);
+  --muted: oklch(0.228 0.006 285.9);
+  --muted-foreground: oklch(0.712 0.013 286.1);     /* #A1A1AA */
+  --accent: oklch(0.228 0.006 285.9);
+  --accent-foreground: oklch(0.947 0.003 286.3);
+  --destructive: oklch(0.577 0.215 27.3);           /* #DC2626 */
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-text: oklch(0.711 0.166 22.2);      /* #F87171 */
+  --destructive-subtle: oklch(0.219 0.040 15.6);    /* #2A1214 */
+  --border: oklch(0.274 0.005 286.0);               /* #27272A */
+  --input: oklch(0.274 0.005 286.0);
+  --ring: oklch(0.704 0.157 278.4);
+}
+
+@theme inline {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-text: var(--destructive-text);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --animate-live: live 2s ease-in-out infinite;
+}
+
+@keyframes live { 50% { opacity: .4; } }
+
+@layer base {
+  * { @apply border-border outline-ring/60; }
+  body { @apply bg-background text-foreground font-sans antialiased; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}</pre>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      tokens: [
+        { name: '--background', lh: '#FFFFFF', lo: 'oklch(1 0 0)', dh: '#0A0A0B', do: 'oklch(0.145 0.002 286.1)', use: 'Page ground' },
+        { name: '--foreground', lh: '#0A0A0B', lo: 'oklch(0.145 0.002 286.1)', dh: '#EDEDEF', do: 'oklch(0.947 0.003 286.3)', use: 'Body text, headings' },
+        { name: '--card', lh: '#FFFFFF', lo: 'oklch(1 0 0)', dh: '#111113', do: 'oklch(0.179 0.004 286.0)', use: 'Cards, interview stage, orbs at rest' },
+        { name: '--muted / --secondary / --accent', lh: '#F4F4F5', lo: 'oklch(0.967 0 0)', dh: '#1C1C1F', do: 'oklch(0.228 0.006 285.9)', use: 'Skeletons, hover surfaces, step numbers' },
+        { name: '--muted-foreground', lh: '#5F5F67', lo: 'oklch(0.488 0.013 285.9)', dh: '#A1A1AA', do: 'oklch(0.712 0.013 286.1)', use: 'Secondary text, idle icons (6.3:1 / 7.7:1)' },
+        { name: '--border / --input', lh: '#E4E4E7', lo: 'oklch(0.920 0.004 286.3)', dh: '#27272A', do: 'oklch(0.274 0.005 286.0)', use: 'Hairlines, input borders' },
+        { name: '--primary / --ring', lh: '#4F46E5', lo: 'oklch(0.511 0.230 277.0)', dh: '#8B93FF', do: 'oklch(0.704 0.157 278.4)', use: 'The one accent: primary action, focus, speaking' },
+        { name: '--primary-foreground', lh: '#FFFFFF', lo: 'oklch(1 0 0)', dh: '#0A0A0B', do: 'oklch(0.145 0.002 286.1)', use: 'Text on primary (6.3:1 / 7.3:1)' },
+        { name: '--primary-subtle  (new)', lh: '#EEF0FF', lo: 'oklch(0.958 0.020 279.9)', dh: '#1A1B33', do: 'oklch(0.234 0.046 280.4)', use: 'Speaking orb fill, “You” transcript label chip' },
+        { name: '--destructive', lh: '#DC2626', lo: 'oklch(0.577 0.215 27.3)', dh: '#DC2626', do: 'oklch(0.577 0.215 27.3)', use: 'End interview button fill (white text 4.8:1)' },
+        { name: '--destructive-text  (new)', lh: '#B91C1C', lo: 'oklch(0.505 0.190 27.5)', dh: '#F87171', do: 'oklch(0.711 0.166 22.2)', use: 'Inline error text and icons' },
+        { name: '--destructive-subtle  (new)', lh: '#FEF2F2', lo: 'oklch(0.971 0.013 17.4)', dh: '#2A1214', do: 'oklch(0.219 0.040 15.6)', use: 'Error alert background' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

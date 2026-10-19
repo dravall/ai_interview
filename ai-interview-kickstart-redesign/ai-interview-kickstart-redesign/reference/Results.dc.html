@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Results screen states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#4F46E5}a:hover{color:#3730A3}
+.t-light{--background:#FFFFFF;--foreground:#0A0A0B;--card:#FFFFFF;--muted:#F4F4F5;--muted-foreground:#5F5F67;--border:#E4E4E7;--input:#E4E4E7;--primary:#4F46E5;--primary-foreground:#FFFFFF;--primary-subtle:#EEF0FF;--destructive:#DC2626;--destructive-text:#B91C1C;--destructive-subtle:#FEF2F2;--ring:#4F46E5;--canvas:#F4F4F5;--shadow:0 1px 2px rgba(10,10,11,.04),0 12px 32px -16px rgba(10,10,11,.12)}
+.t-dark{--background:#0A0A0B;--foreground:#EDEDEF;--card:#111113;--muted:#1C1C1F;--muted-foreground:#A1A1AA;--border:#27272A;--input:#27272A;--primary:#8B93FF;--primary-foreground:#0A0A0B;--primary-subtle:#1A1B33;--destructive:#DC2626;--destructive-text:#F87171;--destructive-subtle:#2A1214;--ring:#8B93FF;--canvas:#000000;--shadow:none}
+.section{background:var(--canvas);color:var(--foreground);padding:56px 64px 72px;display:flex;flex-direction:column;gap:32px}
+.sec-t{font:600 24px/1.2 'Geist';letter-spacing:-.02em;margin:0;color:var(--foreground)}
+.cap{font:500 12px/1 'Geist Mono',ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground);display:flex;gap:10px}
+.cap b{color:var(--foreground);font-weight:500}
+.note{margin:0;font-size:13px;line-height:1.55;color:var(--muted-foreground)}
+.frame{display:flex;flex-direction:column;gap:12px;flex:none}
+.screen{background:var(--background);color:var(--foreground);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-sizing:border-box;box-shadow:var(--shadow);position:relative;display:flex;flex-direction:column}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+.brand{display:flex;align-items:center;gap:10px;font:600 14px/1 'Geist';letter-spacing:-.01em;color:var(--foreground)}
+.mark{width:24px;height:24px;border-radius:7px;background:var(--primary);color:var(--primary-foreground);display:grid;place-items:center;flex:none}
+.mark .ic{width:14px;height:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:8px;font:500 14px/1 'Geist',sans-serif;border:1px solid transparent;cursor:pointer;white-space:nowrap;text-decoration:none;box-sizing:border-box}
+.btn-sm{height:36px;padding:0 14px;font-size:13px}
+.btn-primary{background:var(--primary);color:var(--primary-foreground)}
+.btn-primary:hover{color:var(--primary-foreground)}
+.btn-outline{background:var(--background);color:var(--foreground);border-color:var(--border)}
+.btn-outline:hover{color:var(--foreground)}
+.btn:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.topbar{height:60px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border)}
+.eyebrow{font:500 12px/1 'Geist Mono',monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground)}
+.score{margin:0;display:flex;align-items:baseline;gap:6px;font-weight:600;color:var(--foreground)}
+.score-n{font-size:120px;line-height:.9;letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.score-d{font-size:28px;letter-spacing:-.02em;color:var(--muted-foreground);font-weight:500}
+.meter{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;width:320px}
+.seg{height:6px;border-radius:3px;background:var(--border)}
+.seg.on{background:var(--foreground)}
+.h2{margin:0;font-size:18px;line-height:1.4;font-weight:600;letter-spacing:-.01em;color:var(--foreground)}
+.prose p{margin:0 0 16px;font-size:15px;line-height:1.7;color:var(--foreground);white-space:pre-line}
+.prose p:last-child{margin:0}
+.tx{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid var(--border)}
+.turn{display:grid;grid-template-columns:104px minmax(0,1fr);gap:16px;padding:16px 0;border-bottom:1px solid var(--border)}
+.who{font:500 12px/22px 'Geist Mono',monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground)}
+.who-you{display:inline-block;padding:0 8px;border-radius:6px;background:var(--primary-subtle);color:var(--primary);line-height:22px}
+.said{margin:0;font-size:15px;line-height:1.65;color:var(--foreground)}
+.sm .turn{grid-template-columns:minmax(0,1fr);gap:6px}
+.sk{background:var(--muted);border-radius:6px}
+.pulse{animation:skel 1.6s ease-in-out infinite}
+@keyframes skel{50%{opacity:.55}}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.erricon{width:56px;height:56px;border-radius:50%;background:var(--destructive-subtle);color:var(--destructive-text);display:grid;place-items:center}
+.erricon .ic{width:24px;height:24px}
+.empty{border:1px dashed var(--border);border-radius:12px;padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+@media (prefers-reduced-motion:reduce){.spin,.pulse{animation:none}}
+</style>
+</helmet>
+<div style="width: 3520px; background: #FFFFFF; display: flex; flex-direction: column">
+<header style="padding: 64px 64px 40px; display: flex; flex-direction: column; gap: 10px; color: #0A0A0B">
+<span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: .04em; text-transform: uppercase; color: #5F5F67">Screen 03 · route /result/:id</span>
+<h1 style="margin: 0; font-size: 40px; font-weight: 600; letter-spacing: -0.03em">Results</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #5F5F67; max-width: 900px">A single 640px reading column. The score comes first, then feedback, then the transcript. The feedback and transcript text shown here is sample copy to judge the layout.</p>
+</header>
+
+<sc-for list="{{themes}}" as="t" hint-placeholder-count="2">
+<section class="section {{t.cls}}">
+<h2 class="sec-t">{{t.name}}</h2>
+<div style="display: flex; gap: 32px; align-items: flex-start">
+
+<!-- 01 Grading -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>01</b>Grading in progress</span>
+<div class="screen" style="width: 720px; height: 680px">
+<header class="topbar">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>AI Interview Kickstart</div>
+</header>
+<main style="padding: 48px 40px; display: flex; flex-direction: column; gap: 40px; max-width: 640px; width: 100%; box-sizing: border-box; margin: 0 auto" aria-busy="true">
+<div role="status" aria-live="polite" style="display: flex; flex-direction: column; gap: 8px">
+<p style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; letter-spacing: -0.01em"><svg class="ic spin" aria-hidden="true" viewBox="0 0 24 24" style="color: var(--primary)"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>Analyzing your interview…</p>
+<p style="margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted-foreground)">We’re scoring your answers and writing feedback. This page updates by itself, usually within a minute.</p>
+</div>
+<div class="pulse" aria-hidden="true" style="display: flex; flex-direction: column; gap: 16px">
+<div class="sk" style="width: 168px; height: 96px; border-radius: 10px"></div>
+<div class="sk" style="width: 320px; height: 6px"></div>
+<div style="height: 16px"></div>
+<div class="sk" style="width: 120px; height: 18px"></div>
+<div class="sk" style="width: 100%; height: 12px"></div>
+<div class="sk" style="width: 96%; height: 12px"></div>
+<div class="sk" style="width: 88%; height: 12px"></div>
+<div class="sk" style="width: 62%; height: 12px"></div>
+</div>
+</main>
+</div>
+<p class="note">Poll every 5s. Announce only the first message, not each poll. Skeletons echo the final layout so the page doesn’t jump. After about 90s, add: “Taking longer than usual. You can leave this page and come back.”</p>
+</div>
+
+<!-- 02 Failed -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>02</b>Grading failed</span>
+<div class="screen" style="width: 720px; height: 680px">
+<header class="topbar">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>AI Interview Kickstart</div>
+</header>
+<main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px">
+<div role="alert" style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; max-width: 400px">
+<span class="erricon"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg></span>
+<h1 style="margin: 4px 0 0; font-size: 20px; font-weight: 600; letter-spacing: -0.015em">We couldn’t grade this interview</h1>
+<p style="margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted-foreground)">Something went wrong while scoring. Your conversation was recorded, so you can try grading it again.</p>
+<div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center">
+<button class="btn btn-primary" type="button"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>Try again</button>
+<a class="btn btn-outline" href="#">New interview</a>
+</div>
+</div>
+</main>
+</div>
+<p class="note">Try again re-requests grading and goes back to state 01. Move focus to the button. Don’t also fire a toast here, because the page already says it.</p>
+</div>
+
+<!-- 03 Done -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>03</b>Done</span>
+<div class="screen" style="width: 720px">
+<header class="topbar">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>AI Interview Kickstart</div>
+<a class="btn btn-outline btn-sm" href="#"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New interview</a>
+</header>
+<main style="padding: 56px 40px 56px; display: flex; flex-direction: column; gap: 56px; max-width: 640px; width: 100%; box-sizing: border-box; margin: 0 auto">
+<section style="display: flex; flex-direction: column; gap: 20px">
+<span class="eyebrow">Interview complete · github.com/octocat</span>
+<h1 class="score" aria-label="Score: 7 out of 10"><span class="score-n">7</span><span class="score-d">/10</span></h1>
+<div class="meter" aria-hidden="true"><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 16px">
+<h2 class="h2">Feedback</h2>
+<div class="prose">
+<sc-for list="{{feedback}}" as="p" hint-placeholder-count="3"><p>{{p}}</p></sc-for>
+</div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: baseline; justify-content: space-between"><h2 class="h2">Transcript</h2><span class="eyebrow">{{turnCount}} turns</span></div>
+<ol class="tx">
+<sc-for list="{{turns}}" as="tn" hint-placeholder-count="6">
+<li class="turn"><span class="who"><span class="{{tn.cls}}">{{tn.who}}</span></span><p class="said">{{tn.text}}</p></li>
+</sc-for>
+</ol>
+</section>
+<div style="display: flex; justify-content: center; padding-top: 8px"><a class="btn btn-primary" href="#"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New interview</a></div>
+</main>
+</div>
+<p class="note">The score is the h1. Split feedback on blank lines into &lt;p&gt;, or use white-space: pre-line. Transcript turns are an &lt;ol&gt;. “You” gets the primary-subtle chip so your answers are easy to scan.</p>
+</div>
+
+<!-- 04 Empty transcript -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>04</b>Done · empty transcript</span>
+<div class="screen" style="width: 720px">
+<main style="padding: 40px 40px 56px; display: flex; flex-direction: column; gap: 40px; max-width: 640px; width: 100%; box-sizing: border-box; margin: 0 auto">
+<section style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: baseline; justify-content: space-between"><h2 class="h2">Transcript</h2><span class="eyebrow">0 turns</span></div>
+<div class="empty">
+<svg class="ic" aria-hidden="true" viewBox="0 0 24 24" style="width: 24px; height: 24px; color: var(--muted-foreground); margin-bottom: 4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+<p style="margin: 0; font-size: 15px; font-weight: 500">No transcript for this interview</p>
+<p style="margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted-foreground); max-width: 320px">The call ended before anything was said, so there’s nothing to show here.</p>
+</div>
+</section>
+<div style="display: flex; justify-content: center"><a class="btn btn-primary" href="#"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New interview</a></div>
+</main>
+</div>
+<p class="note">Only the transcript section changes. The score and feedback above it render as in 03. The dashed box keeps the section’s footprint, so the page doesn’t look broken.</p>
+</div>
+
+<!-- Mobile -->
+<div class="frame" style="width: 375px">
+<span class="cap"><b>375</b>Mobile · done</span>
+<div class="screen sm" style="width: 375px">
+<header class="topbar" style="padding: 0 16px; height: 56px">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>Kickstart</div>
+<a class="btn btn-outline btn-sm" href="#" aria-label="New interview"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New</a>
+</header>
+<main style="padding: 40px 16px 40px; display: flex; flex-direction: column; gap: 44px">
+<section style="display: flex; flex-direction: column; gap: 16px">
+<span class="eyebrow">Interview complete</span>
+<h1 class="score" aria-label="Score: 7 out of 10"><span class="score-n" style="font-size: 96px">7</span><span class="score-d" style="font-size: 24px">/10</span></h1>
+<div class="meter" aria-hidden="true" style="width: 100%"><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h2 class="h2">Feedback</h2>
+<div class="prose">
+<sc-for list="{{feedback}}" as="p" hint-placeholder-count="3"><p>{{p}}</p></sc-for>
+</div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; justify-content: space-between"><h2 class="h2">Transcript</h2><span class="eyebrow">{{turnCount}} turns</span></div>
+<ol class="tx">
+<sc-for list="{{turns}}" as="tn" hint-placeholder-count="6">
+<li class="turn"><span class="who"><span class="{{tn.cls}}">{{tn.who}}</span></span><p class="said">{{tn.text}}</p></li>
+</sc-for>
+</ol>
+</section>
+<a class="btn btn-primary" href="#" style="width: 100%">New interview</a>
+</main>
+</div>
+<p class="note">Speaker labels stack above each turn. The score drops to 96px. A full-width button sits at the end.</p>
+</div>
+
+</div>
+</section>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":3520,"height":4800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var turns = [
+      { who: 'Interviewer', cls: '', text: 'Thanks for joining. I looked through your repos. Let’s start with api-gateway: why did you put Redis in front of the upstream calls?' },
+      { who: 'You', cls: 'who-you', text: 'Mostly latency. The upstream providers were slow and a lot of requests repeated, so I cache responses keyed by a hash of the prompt and model, with a short TTL.' },
+      { who: 'Interviewer', cls: '', text: 'How do you deal with a cached response going stale?' },
+      { who: 'You', cls: 'who-you', text: 'The TTL is the main lever, and anything user-specific skips the cache. Actually, I’d also version the keys so a deploy can invalidate everything at once.' },
+      { who: 'Interviewer', cls: '', text: 'Good. In realtime-board you use WebSockets. What happens when a client reconnects?' },
+      { who: 'You', cls: 'who-you', text: 'It fetches the latest snapshot, then replays events after the last sequence number it saw.' }
+    ];
+    return {
+      themes: [
+        { cls: 't-light', name: 'Light', key: 'l' },
+        { cls: 't-dark', name: 'Dark', key: 'd' }
+      ],
+      feedback: [
+        'You explained why Redis sits in front of the upstream calls in api-gateway clearly, and you got to the trade-off between staleness and latency without being asked. That was the strongest part of the call.',
+        'On cache invalidation you led with TTLs and only reached versioned keys after a pause. In a real interview, open with the strategy you would actually ship, then mention the alternatives.',
+        'Your answer on reconnecting WebSocket clients was correct but brief. Say what happens to events that arrive while the snapshot is loading, and how you would test it. That is the follow-up most interviewers ask next.'
+      ],
+      turns: turns,
+      turnCount: turns.length
+    };
+  }
+}
+</script>
+</body>
+</html>

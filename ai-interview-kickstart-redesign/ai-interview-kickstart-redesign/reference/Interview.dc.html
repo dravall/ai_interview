@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Live interview states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#4F46E5}a:hover{color:#3730A3}
+.t-light{--background:#FFFFFF;--foreground:#0A0A0B;--card:#FFFFFF;--muted:#F4F4F5;--muted-foreground:#5F5F67;--border:#E4E4E7;--input:#E4E4E7;--primary:#4F46E5;--primary-foreground:#FFFFFF;--primary-subtle:#EEF0FF;--destructive:#DC2626;--destructive-text:#B91C1C;--destructive-subtle:#FEF2F2;--ring:#4F46E5;--canvas:#F4F4F5;--shadow:0 1px 2px rgba(10,10,11,.04),0 12px 32px -16px rgba(10,10,11,.12)}
+.t-dark{--background:#0A0A0B;--foreground:#EDEDEF;--card:#111113;--muted:#1C1C1F;--muted-foreground:#A1A1AA;--border:#27272A;--input:#27272A;--primary:#8B93FF;--primary-foreground:#0A0A0B;--primary-subtle:#1A1B33;--destructive:#DC2626;--destructive-text:#F87171;--destructive-subtle:#2A1214;--ring:#8B93FF;--canvas:#000000;--shadow:none}
+.section{background:var(--canvas);color:var(--foreground);padding:56px 64px 72px;display:flex;flex-direction:column;gap:32px}
+.sec-t{font:600 24px/1.2 'Geist';letter-spacing:-.02em;margin:0;color:var(--foreground)}
+.cap{font:500 12px/1 'Geist Mono',ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground);display:flex;gap:10px}
+.cap b{color:var(--foreground);font-weight:500}
+.note{margin:0;font-size:13px;line-height:1.55;color:var(--muted-foreground)}
+.frame{display:flex;flex-direction:column;gap:12px;flex:none}
+.screen{background:var(--background);color:var(--foreground);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-sizing:border-box;box-shadow:var(--shadow);position:relative;display:flex;flex-direction:column}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+.mark{width:24px;height:24px;border-radius:7px;background:var(--primary);color:var(--primary-foreground);display:grid;place-items:center;flex:none}
+.mark .ic{width:14px;height:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:8px;font:500 14px/1 'Geist',sans-serif;border:1px solid transparent;cursor:pointer;white-space:nowrap;text-decoration:none;box-sizing:border-box;transition:background-color .15s ease-out,color .15s ease-out,border-color .15s ease-out}
+.btn-primary{background:var(--primary);color:var(--primary-foreground)}
+.btn-outline{background:var(--background);color:var(--foreground);border-color:var(--border)}
+.btn-destructive{background:var(--destructive);color:#FFFFFF}
+.btn-on{background:var(--foreground);color:var(--background);border-color:var(--foreground)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,.focus{outline:2px solid var(--ring);outline-offset:2px}
+.topbar{height:60px;flex:none;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;padding:0 20px;border-bottom:1px solid var(--border)}
+.pill{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border-radius:999px;border:1px solid var(--border);font:500 12px/1 'Geist';color:var(--foreground);background:var(--background)}
+.pill .ic{width:14px;height:14px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.prog{display:flex;align-items:center;gap:10px;font:500 12px/1 'Geist Mono',monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground)}
+.pips{display:flex;gap:4px}
+.pip{width:16px;height:4px;border-radius:2px;background:var(--border)}
+.pip.on{background:var(--foreground)}
+.timer{justify-self:end;font:400 13px/1 'Geist Mono',monospace;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px;position:relative}
+.caption{margin:0;font-size:15px;line-height:1.4;color:var(--foreground);display:flex;align-items:center;gap:8px;min-height:22px;text-align:center}
+.sub{margin:-20px 0 0;font-size:13px;color:var(--muted-foreground);text-align:center}
+.controls{flex:none;display:flex;justify-content:center;gap:12px;padding:20px;border-top:1px solid var(--border)}
+.tiles{display:flex;gap:64px;align-items:flex-start}
+.tile{display:flex;flex-direction:column;align-items:center;gap:14px;width:150px}
+.orb-wrap{position:relative;width:112px;height:112px}
+.halo{position:absolute;inset:0;border-radius:50%;background:var(--primary);opacity:0;transition:transform 80ms linear,opacity 150ms ease-out}
+.orb{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--border);color:var(--muted-foreground);box-sizing:border-box}
+.orb .ic{width:30px;height:30px;stroke-width:1.75}
+.orb-on{border:2px solid var(--primary);background:var(--primary-subtle);color:var(--primary)}
+.orb-off{background:var(--muted);border-style:dashed}
+.dim{opacity:.45}
+.badge{position:absolute;right:2px;bottom:2px;width:30px;height:30px;border-radius:50%;background:var(--foreground);color:var(--background);display:grid;place-items:center;box-shadow:0 0 0 3px var(--background)}
+.badge .ic{width:14px;height:14px}
+.t-name{font:600 14px/1 'Geist';color:var(--foreground)}
+.t-state{font:500 12px/1 'Geist Mono',ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground);min-height:12px}
+.t-state.on{color:var(--primary)}
+.sm .tiles{gap:36px}
+.sm .tile{width:120px;gap:12px}
+.sm .orb-wrap{width:88px;height:88px}
+.sm .orb .ic{width:26px;height:26px}
+.sm .badge{width:26px;height:26px}
+.sm .t-name{font-size:13px}
+.sm .t-state{font-size:11px}
+.banner{position:absolute;top:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:var(--muted);border:1px solid var(--border);font-size:13px;line-height:1.4;color:var(--foreground);width:max-content;max-width:calc(100% - 48px);box-sizing:border-box}
+.errcard{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;max-width:400px}
+.erricon{width:56px;height:56px;border-radius:50%;background:var(--destructive-subtle);color:var(--destructive-text);display:grid;place-items:center;margin-bottom:4px}
+.erricon .ic{width:24px;height:24px}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pulse{animation:live 2s ease-in-out infinite}
+@keyframes live{50%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){.spin,.pulse{animation:none}.halo,.btn{transition:none}}
+</style>
+</helmet>
+<div style="width: 3200px; background: #FFFFFF; display: flex; flex-direction: column">
+<header style="padding: 64px 64px 40px; display: flex; flex-direction: column; gap: 10px; color: #0A0A0B">
+<span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: .04em; text-transform: uppercase; color: #5F5F67">Screen 02 · route /interview/:id</span>
+<h1 style="margin: 0; font-size: 40px; font-weight: 600; letter-spacing: -0.03em">Live interview</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #5F5F67; max-width: 900px">One quiet surface. A status bar on top, two voice tiles in the middle, two controls at the bottom. The caption under the tiles says in words what the orbs show. No text chat and no push-to-talk. The status pill is the single aria-live region.</p>
+</header>
+
+<sc-for list="{{themes}}" as="t" hint-placeholder-count="2">
+<section class="section {{t.cls}}">
+<h2 class="sec-t">{{t.name}}</h2>
+<div style="display: flex; gap: 32px; align-items: flex-start">
+
+<!-- 01 Connecting -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>01</b>Connecting</span>
+<div class="screen" style="width: 720px; height: 560px">
+<header class="topbar">
+<div style="display: flex; align-items: center; gap: 12px"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span><div class="pill" role="status" aria-live="polite"><svg class="ic spin" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>Connecting</div></div>
+<div class="prog"><span>Getting ready</span><span class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span></span></div>
+<span class="timer">00:00</span>
+</header>
+<section class="stage">
+<div class="tiles dim">
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div></div><span class="t-name">Interviewer</span><span class="t-state"></span></div>
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div></div><span class="t-name">You</span><span class="t-state"></span></div>
+</div>
+<p class="caption">Setting up your interview &amp; microphone…</p>
+<p class="sub">Your browser will ask for microphone access. Choose Allow.</p>
+</section>
+<footer class="controls">
+<button class="btn btn-outline" type="button" aria-pressed="false" disabled="{{ true }}"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>Mute</button>
+<button class="btn btn-destructive" type="button" disabled="{{ true }}"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="22" x2="2" y1="2" y2="22"></line></svg>End interview</button>
+</footer>
+</div>
+<p class="note">Both controls disabled. Tiles at 45% with no state labels. Timer holds at 00:00 and starts on the first audio frame from the interviewer.</p>
+</div>
+
+<!-- 02 Live, interviewer speaking -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>02</b>Live · interviewer speaking</span>
+<div class="screen" style="width: 720px; height: 560px">
+<header class="topbar">
+<div style="display: flex; align-items: center; gap: 12px"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span><div class="pill" role="status" aria-live="polite"><span class="dot pulse" aria-hidden="true"></span>Live</div></div>
+<div class="prog"><span>Question 2 of 3</span><span class="pips" aria-hidden="true"><span class="pip on"></span><span class="pip on"></span><span class="pip"></span></span></div>
+<span class="timer">04:12</span>
+</header>
+<section class="stage">
+<div class="tiles">
+<div class="tile"><div class="orb-wrap"><div class="halo" style="transform: scale(1.26); opacity: 0.4"></div><div class="orb orb-on"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div></div><span class="t-name">Interviewer</span><span class="t-state on">Speaking</span></div>
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div></div><span class="t-name">You</span><span class="t-state">Listening</span></div>
+</div>
+<p class="caption">Interviewer is speaking</p>
+<p class="sub">Jump in anytime. Just start talking.</p>
+</section>
+<footer class="controls">
+<button class="btn btn-outline" type="button" aria-pressed="false"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>Mute</button>
+<button class="btn btn-destructive" type="button"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="22" x2="2" y1="2" y2="22"></line></svg>End interview</button>
+</footer>
+</div>
+<p class="note">Only the speaker turns indigo. The “Jump in anytime” hint shows for the first question only, then goes away. Progress comes from the question index the server sends with each turn.</p>
+</div>
+
+<!-- 03 Live, you interrupt -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>03</b>Live · you interrupt</span>
+<div class="screen" style="width: 720px; height: 560px">
+<header class="topbar">
+<div style="display: flex; align-items: center; gap: 12px"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span><div class="pill" role="status" aria-live="polite"><span class="dot pulse" aria-hidden="true"></span>Live</div></div>
+<div class="prog"><span>Question 2 of 3</span><span class="pips" aria-hidden="true"><span class="pip on"></span><span class="pip on"></span><span class="pip"></span></span></div>
+<span class="timer">04:19</span>
+</header>
+<section class="stage">
+<div class="tiles">
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div></div><span class="t-name">Interviewer</span><span class="t-state">Listening</span></div>
+<div class="tile"><div class="orb-wrap"><div class="halo" style="transform: scale(1.31); opacity: 0.46"></div><div class="orb orb-on"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div></div><span class="t-name">You</span><span class="t-state on">Speaking</span></div>
+</div>
+<p class="caption">Go ahead, the interviewer is listening</p>
+</section>
+<footer class="controls">
+<button class="btn btn-outline" type="button" aria-pressed="false"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>Mute</button>
+<button class="btn btn-destructive" type="button"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="22" x2="2" y1="2" y2="22"></line></svg>End interview</button>
+</footer>
+</div>
+<p class="note">Barge-in: once the server stops the AI audio, the interviewer’s level falls to zero and its tile goes idle without any extra UI. The highlight simply moves across. Both tiles can be lit for around 200ms, which is fine.</p>
+</div>
+
+<!-- 04 Muted -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>04</b>Live · muted</span>
+<div class="screen" style="width: 720px; height: 560px">
+<header class="topbar">
+<div style="display: flex; align-items: center; gap: 12px"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span><div class="pill" role="status" aria-live="polite"><span class="dot pulse" aria-hidden="true"></span>Live</div></div>
+<div class="prog"><span>Question 2 of 3</span><span class="pips" aria-hidden="true"><span class="pip on"></span><span class="pip on"></span><span class="pip"></span></span></div>
+<span class="timer">05:02</span>
+</header>
+<section class="stage">
+<div class="tiles">
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div></div><span class="t-name">Interviewer</span><span class="t-state">Listening</span></div>
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb orb-off"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div><span class="badge"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><line x1="2" x2="22" y1="2" y2="22"></line><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"></path><path d="M5 10v2a7 7 0 0 0 12 5"></path><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"></path><path d="M9 9v3a3 3 0 0 0 5.12 2.12"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg></span></div><span class="t-name">You</span><span class="t-state">Muted</span></div>
+</div>
+<p class="caption">You’re muted. Unmute to answer.</p>
+</section>
+<footer class="controls">
+<button class="btn btn-on" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><line x1="2" x2="22" y1="2" y2="22"></line><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"></path><path d="M5 10v2a7 7 0 0 0 12 5"></path><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"></path><path d="M9 9v3a3 3 0 0 0 5.12 2.12"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>Unmute</button>
+<button class="btn btn-destructive" type="button"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="22" x2="2" y1="2" y2="22"></line></svg>End interview</button>
+</footer>
+</div>
+<p class="note">The pressed toggle inverts (foreground fill) and sets aria-pressed="true". The label and icon both flip. Your orb goes flat: dashed, muted fill, MicOff badge, level forced to 0. Shortcut M.</p>
+</div>
+</div>
+
+<div style="display: flex; gap: 32px; align-items: flex-start">
+
+<!-- 05 Reconnecting -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>05</b>Reconnecting</span>
+<div class="screen" style="width: 720px; height: 560px">
+<header class="topbar">
+<div style="display: flex; align-items: center; gap: 12px"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span><div class="pill" role="status" aria-live="polite"><svg class="ic spin" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>Reconnecting</div></div>
+<div class="prog"><span>Question 2 of 3</span><span class="pips" aria-hidden="true"><span class="pip on"></span><span class="pip on"></span><span class="pip"></span></span></div>
+<span class="timer">05:31 · paused</span>
+</header>
+<section class="stage">
+<div class="banner"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" style="color: var(--muted-foreground)"><path d="M12 20h.01"></path><path d="M8.5 16.429a5 5 0 0 1 7 0"></path><path d="M5 12.859a10 10 0 0 1 5.17-2.69"></path><path d="M19 12.859a10 10 0 0 0-2.007-1.523"></path><path d="M2 8.82a15 15 0 0 1 4.177-2.643"></path><path d="M22 8.82a15 15 0 0 0-11.288-3.764"></path><path d="m2 2 20 20"></path></svg>Connection dropped. We’re reconnecting, and the interview picks up where it left off.</div>
+<div class="tiles dim">
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div></div><span class="t-name">Interviewer</span><span class="t-state">Paused</span></div>
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div></div><span class="t-name">You</span><span class="t-state">Paused</span></div>
+</div>
+<p class="caption mono" style="font-size: 13px; color: var(--muted-foreground)">Attempt 2 of 5</p>
+</section>
+<footer class="controls">
+<button class="btn btn-outline" type="button" aria-pressed="false" disabled="{{ true }}"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>Mute</button>
+<button class="btn btn-destructive" type="button"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="22" x2="2" y1="2" y2="22"></line></svg>End interview</button>
+</footer>
+</div>
+<p class="note">Neutral, not red: nothing is lost yet. The timer pauses. Mute is disabled. End stays available. The attempt counter is optional. When retries run out, go to 06 with “We couldn’t reconnect.”</p>
+</div>
+
+<!-- 06 Error -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>06</b>Error</span>
+<div class="screen" style="width: 720px; height: 560px">
+<header class="topbar">
+<div style="display: flex; align-items: center; gap: 12px"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span><div class="pill" style="border-color: color-mix(in oklab, var(--destructive-text) 35%, transparent)"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" style="color: var(--destructive-text)"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>Interview stopped</div></div>
+<div class="prog"><span>Question 1 of 3</span><span class="pips" aria-hidden="true"><span class="pip"></span><span class="pip"></span><span class="pip"></span></span></div>
+<span class="timer">00:00</span>
+</header>
+<section class="stage">
+<div class="errcard" role="alert">
+<span class="erricon"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><line x1="2" x2="22" y1="2" y2="22"></line><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"></path><path d="M5 10v2a7 7 0 0 0 12 5"></path><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"></path><path d="M9 9v3a3 3 0 0 0 5.12 2.12"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg></span>
+<h2 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.015em">Microphone access was blocked</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted-foreground)">Click the microphone icon in your browser’s address bar, set it to Allow, then try again.</p>
+<div style="display: flex; gap: 8px; margin-top: 12px">
+<button class="btn btn-primary" type="button"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>Try again</button>
+<a class="btn btn-outline" href="#">Back to start</a>
+</div>
+</div>
+</section>
+</div>
+<p class="note">The error card replaces the stage, and the controls bar is removed. Use role=alert and move focus to “Try again”. Other messages use the same layout: “We couldn’t reconnect” and “The interview service is unavailable”.</p>
+</div>
+
+<!-- 07 Ending -->
+<div class="frame" style="width: 720px">
+<span class="cap"><b>07</b>Ending · wrapping up</span>
+<div class="screen" style="width: 720px; height: 560px">
+<header class="topbar">
+<div style="display: flex; align-items: center; gap: 12px"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span><div class="pill" role="status" aria-live="polite"><svg class="ic spin" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>Ending</div></div>
+<div class="prog"><span>Question 3 of 3</span><span class="pips" aria-hidden="true"><span class="pip on"></span><span class="pip on"></span><span class="pip on"></span></span></div>
+<span class="timer">11:48</span>
+</header>
+<section class="stage">
+<div class="tiles dim">
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div></div><span class="t-name">Interviewer</span><span class="t-state"></span></div>
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div></div><span class="t-name">You</span><span class="t-state"></span></div>
+</div>
+<p class="caption"><svg class="ic spin" aria-hidden="true" viewBox="0 0 24 24" style="color: var(--muted-foreground)"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>Wrapping up…</p>
+<p class="sub" style="margin-top: -16px">Taking you to your results.</p>
+</section>
+<footer class="controls">
+<button class="btn btn-outline" type="button" aria-pressed="false" disabled="{{ true }}"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>Mute</button>
+<button class="btn btn-destructive" type="button" disabled="{{ true }}"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="22" x2="2" y1="2" y2="22"></line></svg>End interview</button>
+</footer>
+</div>
+<p class="note">Same layout whether the interviewer ends the call or you press End. End asks for no confirmation, but it’s spaced away from Mute. The timer freezes. Redirect to /result/:id as soon as the transcript is saved.</p>
+</div>
+
+<!-- Mobile -->
+<div class="frame" style="width: 375px">
+<span class="cap"><b>375</b>Mobile · live</span>
+<div class="screen sm" style="width: 375px; height: 760px">
+<header class="topbar" style="grid-template-columns: minmax(0, 1fr) auto; padding: 0 16px; height: 56px">
+<div class="pill" role="status" aria-live="polite" style="justify-self: start"><span class="dot pulse" aria-hidden="true"></span>Live</div>
+<span class="timer">04:12</span>
+</header>
+<div class="prog" style="justify-content: center; padding: 16px 16px 0"><span>Question 2 of 3</span><span class="pips" aria-hidden="true"><span class="pip on"></span><span class="pip on"></span><span class="pip"></span></span></div>
+<section class="stage" style="padding: 16px">
+<div class="tiles">
+<div class="tile"><div class="orb-wrap"><div class="halo" style="transform: scale(1.26); opacity: 0.4"></div><div class="orb orb-on"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div></div><span class="t-name">Interviewer</span><span class="t-state on">Speaking</span></div>
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div></div><span class="t-name">You</span><span class="t-state">Listening</span></div>
+</div>
+<p class="caption">Interviewer is speaking</p>
+<p class="sub">Jump in anytime. Just start talking.</p>
+</section>
+<footer class="controls" style="padding: 16px">
+<button class="btn btn-outline" type="button" aria-pressed="false" style="flex: 1"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>Mute</button>
+<button class="btn btn-destructive" type="button" aria-label="End interview" style="flex: 1"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="22" x2="2" y1="2" y2="22"></line></svg>End</button>
+</footer>
+</div>
+<p class="note">The logo drops out and progress moves under the bar. Orbs shrink to 88px. Controls split the width, and the bottom padding should include env(safe-area-inset-bottom).</p>
+</div>
+
+</div>
+</section>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":3200,"height":3400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      themes: [
+        { cls: 't-light', name: 'Light', key: 'l' },
+        { cls: 't-dark', name: 'Dark', key: 'd' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

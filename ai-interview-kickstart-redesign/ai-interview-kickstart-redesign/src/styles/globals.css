@@ -1,0 +1,123 @@
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+
+/* Fonts: `npm i geist` and import GeistSans/GeistMono, or load Geist + Geist Mono from Google Fonts. */
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(1 0 0);                       /* #FFFFFF */
+  --foreground: oklch(0.145 0.002 286.1);           /* #0A0A0B */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0.002 286.1);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0.002 286.1);
+  --primary: oklch(0.511 0.230 277.0);              /* #4F46E5 */
+  --primary-foreground: oklch(1 0 0);
+  --primary-subtle: oklch(0.958 0.020 279.9);       /* #EEF0FF */
+  --secondary: oklch(0.967 0 0);                    /* #F4F4F5 */
+  --secondary-foreground: oklch(0.145 0.002 286.1);
+  --muted: oklch(0.967 0 0);
+  --muted-foreground: oklch(0.488 0.013 285.9);     /* #5F5F67 */
+  --accent: oklch(0.967 0 0);
+  --accent-foreground: oklch(0.145 0.002 286.1);
+  --destructive: oklch(0.577 0.215 27.3);           /* #DC2626 */
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-text: oklch(0.505 0.190 27.5);      /* #B91C1C */
+  --destructive-subtle: oklch(0.971 0.013 17.4);    /* #FEF2F2 */
+  --border: oklch(0.920 0.004 286.3);               /* #E4E4E7 */
+  --input: oklch(0.920 0.004 286.3);
+  --ring: oklch(0.511 0.230 277.0);
+  --shadow-surface: 0 1px 2px rgb(10 10 11 / 0.04), 0 12px 32px -16px rgb(10 10 11 / 0.12);
+}
+
+.dark {
+  --background: oklch(0.145 0.002 286.1);           /* #0A0A0B */
+  --foreground: oklch(0.947 0.003 286.3);           /* #EDEDEF */
+  --card: oklch(0.179 0.004 286.0);                 /* #111113 */
+  --card-foreground: oklch(0.947 0.003 286.3);
+  --popover: oklch(0.179 0.004 286.0);
+  --popover-foreground: oklch(0.947 0.003 286.3);
+  --primary: oklch(0.704 0.157 278.4);              /* #8B93FF */
+  --primary-foreground: oklch(0.145 0.002 286.1);
+  --primary-subtle: oklch(0.234 0.046 280.4);       /* #1A1B33 */
+  --secondary: oklch(0.228 0.006 285.9);            /* #1C1C1F */
+  --secondary-foreground: oklch(0.947 0.003 286.3);
+  --muted: oklch(0.228 0.006 285.9);
+  --muted-foreground: oklch(0.712 0.013 286.1);     /* #A1A1AA */
+  --accent: oklch(0.228 0.006 285.9);
+  --accent-foreground: oklch(0.947 0.003 286.3);
+  --destructive: oklch(0.577 0.215 27.3);           /* #DC2626 */
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-text: oklch(0.711 0.166 22.2);      /* #F87171 */
+  --destructive-subtle: oklch(0.219 0.040 15.6);    /* #2A1214 */
+  --border: oklch(0.274 0.005 286.0);               /* #27272A */
+  --input: oklch(0.274 0.005 286.0);
+  --ring: oklch(0.704 0.157 278.4);
+  --shadow-surface: none;
+}
+
+@theme inline {
+  --font-sans: "Geist", "Geist Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-text: var(--destructive-text);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --shadow-surface: var(--shadow-surface);
+  --animate-live: live 2s ease-in-out infinite;
+  --animate-skeleton: skeleton 1.6s ease-in-out infinite;
+}
+
+@keyframes live { 50% { opacity: 0.4; } }
+@keyframes skeleton { 50% { opacity: 0.55; } }
+
+@layer base {
+  * { @apply border-border outline-ring/60; }
+  body { @apply bg-background text-foreground font-sans antialiased; }
+}
+
+/* ---- VoiceTile halo (see VoiceTile.tsx) ---- */
+.voice-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--primary);
+  opacity: 0;
+  transform: scale(calc(1 + 0.35 * var(--level, 0)));
+  transition: transform 80ms linear, opacity 150ms ease-out;
+  pointer-events: none;
+}
+[data-speaking="true"] > .voice-halo { opacity: calc(0.14 + 0.36 * var(--level, 0)); }
+[data-muted="true"] > .voice-halo { opacity: 0; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .voice-halo { transform: scale(1.12); }
+  [data-speaking="true"] > .voice-halo { opacity: 0.3; }
+}

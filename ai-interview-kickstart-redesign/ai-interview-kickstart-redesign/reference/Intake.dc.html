@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Intake screen states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#4F46E5}a:hover{color:#3730A3}
+.t-light{--background:#FFFFFF;--foreground:#0A0A0B;--card:#FFFFFF;--muted:#F4F4F5;--muted-foreground:#5F5F67;--border:#E4E4E7;--input:#E4E4E7;--primary:#4F46E5;--primary-foreground:#FFFFFF;--primary-subtle:#EEF0FF;--destructive:#DC2626;--destructive-text:#B91C1C;--destructive-subtle:#FEF2F2;--ring:#4F46E5;--canvas:#F4F4F5;--shadow:0 1px 2px rgba(10,10,11,.04),0 12px 32px -16px rgba(10,10,11,.12)}
+.t-dark{--background:#0A0A0B;--foreground:#EDEDEF;--card:#111113;--muted:#1C1C1F;--muted-foreground:#A1A1AA;--border:#27272A;--input:#27272A;--primary:#8B93FF;--primary-foreground:#0A0A0B;--primary-subtle:#1A1B33;--destructive:#DC2626;--destructive-text:#F87171;--destructive-subtle:#2A1214;--ring:#8B93FF;--canvas:#000000;--shadow:none}
+.section{background:var(--canvas);color:var(--foreground);padding:56px 64px 72px;display:flex;flex-direction:column;gap:32px}
+.sec-t{font:600 24px/1.2 'Geist';letter-spacing:-.02em;margin:0;color:var(--foreground)}
+.cap{font:500 12px/1 'Geist Mono',ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground);display:flex;gap:10px}
+.cap b{color:var(--foreground);font-weight:500}
+.note{margin:0;font-size:13px;line-height:1.55;color:var(--muted-foreground)}
+.frame{display:flex;flex-direction:column;gap:12px;flex:none}
+.screen{background:var(--background);color:var(--foreground);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-sizing:border-box;box-shadow:var(--shadow);position:relative}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+.brand{display:flex;align-items:center;gap:10px;font:600 14px/1 'Geist';letter-spacing:-.01em;color:var(--foreground)}
+.mark{width:24px;height:24px;border-radius:7px;background:var(--primary);color:var(--primary-foreground);display:grid;place-items:center;flex:none}
+.mark .ic{width:14px;height:14px}
+.h1{margin:0;font-size:32px;line-height:1.15;font-weight:600;letter-spacing:-.025em;color:var(--foreground)}
+.lead{margin:0;font-size:15px;line-height:1.6;color:var(--muted-foreground)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:8px;font:500 14px/1 'Geist',sans-serif;border:1px solid transparent;cursor:pointer;white-space:nowrap;text-decoration:none;box-sizing:border-box;transition:background-color .15s ease-out,color .15s ease-out,border-color .15s ease-out}
+.btn-primary{background:var(--primary);color:var(--primary-foreground)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.label{font:500 13px/1 'Geist';color:var(--foreground)}
+.field{display:flex;align-items:center;gap:10px;height:44px;padding:0 12px;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--muted-foreground);box-sizing:border-box;transition:border-color .15s ease-out,box-shadow .15s ease-out}
+.field input{flex:1;min-width:0;border:0;background:transparent;color:var(--foreground);font:400 15px 'Geist',sans-serif;outline:none;padding:0}
+.field input::placeholder{color:var(--muted-foreground)}
+.f-focus{border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in oklab,var(--ring) 22%,transparent)}
+.f-invalid{border-color:var(--destructive-text)}
+.f-invalid.f-focus{box-shadow:0 0 0 3px color-mix(in oklab,var(--destructive-text) 20%,transparent)}
+.f-disabled{background:var(--muted)}
+.hint{margin:0;display:flex;gap:8px;align-items:center;font-size:13px;line-height:1.45;color:var(--muted-foreground)}
+.hint .ic{width:14px;height:14px}
+.err{margin:0;display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.45;color:var(--destructive-text)}
+.err .ic{width:14px;height:14px;margin-top:2px}
+.alert{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:10px;background:var(--destructive-subtle);border:1px solid color-mix(in oklab,var(--destructive-text) 25%,transparent);color:var(--foreground)}
+.alert>.ic{color:var(--destructive-text);margin-top:2px}
+.alert-t{font:600 14px/1.4 'Geist';margin:0}
+.alert-d{font:400 13px/1.5 'Geist';color:var(--muted-foreground);margin:2px 0 0}
+.steps{list-style:none;margin:0;padding:24px 0 0;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.step{display:flex;flex-direction:column;gap:6px}
+.step-n{width:22px;height:22px;border-radius:6px;background:var(--muted);color:var(--foreground);font-size:12px;display:grid;place-items:center;margin-bottom:4px}
+.step-t{font:500 13px/1.3 'Geist';color:var(--foreground)}
+.step-d{font-size:12.5px;line-height:1.4;color:var(--muted-foreground)}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.btn,.field{transition:none}}
+</style>
+</helmet>
+<div style="width: 3520px; background: #FFFFFF; display: flex; flex-direction: column">
+<header style="padding: 64px 64px 40px; display: flex; flex-direction: column; gap: 10px; color: #0A0A0B">
+<span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: .04em; text-transform: uppercase; color: #5F5F67">Screen 01 · route /</span>
+<h1 style="margin: 0; font-size: 40px; font-weight: 600; letter-spacing: -0.03em">Intake</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #5F5F67; max-width: 820px">Centred 480px column on a plain background. One field, one button. The steps row sits at the bottom of the viewport as a quiet footer, so the form stays the first thing you see.</p>
+</header>
+
+<sc-for list="{{themes}}" as="t" hint-placeholder-count="2">
+<section class="section {{t.cls}}">
+<h2 class="sec-t">{{t.name}}</h2>
+<div style="display: flex; gap: 32px; align-items: flex-start">
+
+<!-- 01 Empty -->
+<div class="frame" style="width: 560px">
+<span class="cap"><b>01</b>Empty</span>
+<div class="screen" style="width: 560px; height: 600px">
+<main style="height: 100%; box-sizing: border-box; padding: 40px 40px 32px; display: flex; flex-direction: column">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>AI Interview Kickstart</div>
+<div style="margin-top: 64px; display: flex; flex-direction: column; gap: 12px">
+<h1 class="h1">Rehearse your technical interview out loud.</h1>
+<p class="lead">Paste your GitHub profile. An AI interviewer asks you 2–3 questions about your own repos, live by voice, then scores you out of 10 with written feedback.</p>
+</div>
+<form style="margin-top: 32px; display: flex; flex-direction: column; gap: 10px">
+<label class="label" for="gh-{{t.key}}-1">GitHub profile URL</label>
+<div style="display: flex; gap: 8px">
+<div class="field" style="flex: 1"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg><input id="gh-{{t.key}}-1" type="url" inputmode="url" placeholder="github.com/username"></div>
+<button class="btn btn-primary" type="submit">Start interview<svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+</div>
+<p class="hint"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>We’ll ask for microphone access once the interview starts.</p>
+</form>
+<ol class="steps" style="margin-top: auto">
+<li class="step"><span class="step-n mono">1</span><span class="step-t">Connect GitHub</span><span class="step-d">We read your public repos</span></li>
+<li class="step"><span class="step-n mono">2</span><span class="step-t">Talk</span><span class="step-d">2–3 questions, by voice</span></li>
+<li class="step"><span class="step-n mono">3</span><span class="step-t">Get feedback</span><span class="step-d">Score /10 and written notes</span></li>
+</ol>
+</main>
+</div>
+<p class="note">Button stays enabled. Submitting empty shows the inline error from 03. Autofocus the input on desktop only.</p>
+</div>
+
+<!-- 02 Typing -->
+<div class="frame" style="width: 560px">
+<span class="cap"><b>02</b>Typing · focus</span>
+<div class="screen" style="width: 560px; height: 600px">
+<main style="height: 100%; box-sizing: border-box; padding: 40px 40px 32px; display: flex; flex-direction: column">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>AI Interview Kickstart</div>
+<div style="margin-top: 64px; display: flex; flex-direction: column; gap: 12px">
+<h1 class="h1">Rehearse your technical interview out loud.</h1>
+<p class="lead">Paste your GitHub profile. An AI interviewer asks you 2–3 questions about your own repos, live by voice, then scores you out of 10 with written feedback.</p>
+</div>
+<form style="margin-top: 32px; display: flex; flex-direction: column; gap: 10px">
+<label class="label" for="gh-{{t.key}}-2">GitHub profile URL</label>
+<div style="display: flex; gap: 8px">
+<div class="field f-focus" style="flex: 1; color: var(--foreground)"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg><input id="gh-{{t.key}}-2" type="url" value="github.com/octocat"></div>
+<button class="btn btn-primary" type="submit">Start interview<svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+</div>
+<p class="hint"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>We’ll ask for microphone access once the interview starts.</p>
+</form>
+<ol class="steps" style="margin-top: auto">
+<li class="step"><span class="step-n mono">1</span><span class="step-t">Connect GitHub</span><span class="step-d">We read your public repos</span></li>
+<li class="step"><span class="step-n mono">2</span><span class="step-t">Talk</span><span class="step-d">2–3 questions, by voice</span></li>
+<li class="step"><span class="step-n mono">3</span><span class="step-t">Get feedback</span><span class="step-d">Score /10 and written notes</span></li>
+</ol>
+</main>
+</div>
+<p class="note">Focus: border plus a 3px ring in --ring at 22%. Accept github.com/user, https://github.com/user or a bare username, and normalise before you validate.</p>
+</div>
+
+<!-- 03 Invalid -->
+<div class="frame" style="width: 560px">
+<span class="cap"><b>03</b>Invalid / empty URL</span>
+<div class="screen" style="width: 560px; height: 600px">
+<main style="height: 100%; box-sizing: border-box; padding: 40px 40px 32px; display: flex; flex-direction: column">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>AI Interview Kickstart</div>
+<div style="margin-top: 64px; display: flex; flex-direction: column; gap: 12px">
+<h1 class="h1">Rehearse your technical interview out loud.</h1>
+<p class="lead">Paste your GitHub profile. An AI interviewer asks you 2–3 questions about your own repos, live by voice, then scores you out of 10 with written feedback.</p>
+</div>
+<form style="margin-top: 32px; display: flex; flex-direction: column; gap: 10px">
+<label class="label" for="gh-{{t.key}}-3">GitHub profile URL</label>
+<div style="display: flex; gap: 8px">
+<div class="field f-invalid f-focus" style="flex: 1; color: var(--destructive-text)"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg><input id="gh-{{t.key}}-3" type="url" value="github.com/octocat/hello-world" aria-invalid="true" aria-describedby="gh-{{t.key}}-3-err"></div>
+<button class="btn btn-primary" type="submit">Start interview<svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+</div>
+<p class="err" id="gh-{{t.key}}-3-err"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>That’s a repository link. Paste your profile instead, like github.com/octocat.</p>
+</form>
+<ol class="steps" style="margin-top: auto">
+<li class="step"><span class="step-n mono">1</span><span class="step-t">Connect GitHub</span><span class="step-d">We read your public repos</span></li>
+<li class="step"><span class="step-n mono">2</span><span class="step-t">Talk</span><span class="step-d">2–3 questions, by voice</span></li>
+<li class="step"><span class="step-n mono">3</span><span class="step-t">Get feedback</span><span class="step-d">Score /10 and written notes</span></li>
+</ol>
+</main>
+</div>
+<p class="note">Validate on submit, then re-check on every change once the error is showing. The message replaces the mic hint, so the layout doesn’t jump. Empty submit says: “Enter your GitHub profile URL to start.” Focus returns to the input.</p>
+</div>
+
+<!-- 04 Loading -->
+<div class="frame" style="width: 560px">
+<span class="cap"><b>04</b>Loading · Starting…</span>
+<div class="screen" style="width: 560px; height: 600px">
+<main style="height: 100%; box-sizing: border-box; padding: 40px 40px 32px; display: flex; flex-direction: column" aria-busy="true">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>AI Interview Kickstart</div>
+<div style="margin-top: 64px; display: flex; flex-direction: column; gap: 12px">
+<h1 class="h1">Rehearse your technical interview out loud.</h1>
+<p class="lead">Paste your GitHub profile. An AI interviewer asks you 2–3 questions about your own repos, live by voice, then scores you out of 10 with written feedback.</p>
+</div>
+<form style="margin-top: 32px; display: flex; flex-direction: column; gap: 10px">
+<label class="label" for="gh-{{t.key}}-4">GitHub profile URL</label>
+<div style="display: flex; gap: 8px">
+<div class="field f-disabled" style="flex: 1"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg><input id="gh-{{t.key}}-4" type="url" value="github.com/octocat" readOnly="{{ true }}"></div>
+<button class="btn btn-primary" type="submit" disabled="{{ true }}" style="width: 166px"><svg class="ic spin" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>Starting…</button>
+</div>
+<p class="hint" role="status">Reading your public repos. This takes a few seconds.</p>
+</form>
+<ol class="steps" style="margin-top: auto">
+<li class="step"><span class="step-n mono">1</span><span class="step-t">Connect GitHub</span><span class="step-d">We read your public repos</span></li>
+<li class="step"><span class="step-n mono">2</span><span class="step-t">Talk</span><span class="step-d">2–3 questions, by voice</span></li>
+<li class="step"><span class="step-n mono">3</span><span class="step-t">Get feedback</span><span class="step-d">Score /10 and written notes</span></li>
+</ol>
+</main>
+</div>
+<p class="note">Fix the button’s width so the label swap doesn’t reflow. Make the input read-only, not disabled, so focus stays put. Show the helper text after about 600ms to avoid a flash on fast responses.</p>
+</div>
+
+<!-- 05 Failed -->
+<div class="frame" style="width: 560px">
+<span class="cap"><b>05</b>Request failed</span>
+<div class="screen" style="width: 560px; height: 600px">
+<main style="height: 100%; box-sizing: border-box; padding: 40px 40px 32px; display: flex; flex-direction: column">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>AI Interview Kickstart</div>
+<div style="margin-top: 64px; display: flex; flex-direction: column; gap: 12px">
+<h1 class="h1">Rehearse your technical interview out loud.</h1>
+<p class="lead">Paste your GitHub profile. An AI interviewer asks you 2–3 questions about your own repos, live by voice, then scores you out of 10 with written feedback.</p>
+</div>
+<form style="margin-top: 24px; display: flex; flex-direction: column; gap: 10px">
+<div class="alert" role="alert"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg><div><p class="alert-t">Couldn’t start the interview</p><p class="alert-d">Check that the profile is public, then try again.</p></div></div>
+<label class="label" for="gh-{{t.key}}-5" style="margin-top: 6px">GitHub profile URL</label>
+<div style="display: flex; gap: 8px">
+<div class="field" style="flex: 1"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg><input id="gh-{{t.key}}-5" type="url" value="github.com/octocat"></div>
+<button class="btn btn-primary" type="submit" style="width: 166px"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>Try again</button>
+</div>
+</form>
+<ol class="steps" style="margin-top: auto">
+<li class="step"><span class="step-n mono">1</span><span class="step-t">Connect GitHub</span><span class="step-d">We read your public repos</span></li>
+<li class="step"><span class="step-n mono">2</span><span class="step-t">Talk</span><span class="step-d">2–3 questions, by voice</span></li>
+<li class="step"><span class="step-n mono">3</span><span class="step-t">Get feedback</span><span class="step-d">Score /10 and written notes</span></li>
+</ol>
+</main>
+</div>
+<p class="note">Keep the URL. Put the alert above the label, with role=alert. Map the error copy: 404 means “No GitHub user at that address.” Rate limited means “GitHub is busy, try again in a minute.” Anything else uses the generic text. A sonner toast.error with the same title is optional.</p>
+</div>
+
+<!-- Mobile -->
+<div class="frame" style="width: 375px">
+<span class="cap"><b>375</b>Mobile · empty</span>
+<div class="screen" style="width: 375px; height: 812px">
+<main style="height: 100%; box-sizing: border-box; padding: 24px 16px 28px; display: flex; flex-direction: column">
+<div class="brand"><span class="mark"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></span>AI Interview Kickstart</div>
+<div style="margin-top: 56px; display: flex; flex-direction: column; gap: 12px">
+<h1 class="h1" style="font-size: 28px">Rehearse your technical interview out loud.</h1>
+<p class="lead">Paste your GitHub profile. An AI interviewer asks you 2–3 questions about your own repos, live by voice, then scores you out of 10 with written feedback.</p>
+</div>
+<form style="margin-top: 28px; display: flex; flex-direction: column; gap: 10px">
+<label class="label" for="gh-{{t.key}}-m">GitHub profile URL</label>
+<div class="field"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg><input id="gh-{{t.key}}-m" type="url" inputmode="url" placeholder="github.com/username"></div>
+<button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 4px">Start interview<svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+<p class="hint" style="align-items: flex-start"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" style="margin-top: 2px"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>We’ll ask for microphone access once the interview starts.</p>
+</form>
+<ol class="steps" style="margin-top: auto; grid-template-columns: minmax(0, 1fr); gap: 14px">
+<li class="step" style="flex-direction: row; align-items: center; gap: 12px"><span class="step-n mono" style="margin: 0">1</span><span class="step-t">Connect GitHub</span><span class="step-d">· public repos</span></li>
+<li class="step" style="flex-direction: row; align-items: center; gap: 12px"><span class="step-n mono" style="margin: 0">2</span><span class="step-t">Talk</span><span class="step-d">· 2–3 questions</span></li>
+<li class="step" style="flex-direction: row; align-items: center; gap: 12px"><span class="step-n mono" style="margin: 0">3</span><span class="step-t">Get feedback</span><span class="step-d">· score and notes</span></li>
+</ol>
+</main>
+</div>
+<p class="note">16px gutters. The input and a full-width button stack. The steps collapse into a three-line list.</p>
+</div>
+
+</div>
+</section>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":3520,"height":2500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      themes: [
+        { cls: 't-light', name: 'Light', key: 'l' },
+        { cls: 't-dark', name: 'Dark', key: 'd' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

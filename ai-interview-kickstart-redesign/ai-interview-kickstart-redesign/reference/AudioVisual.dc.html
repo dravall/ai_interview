@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Live audio visual spec</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#4F46E5}a:hover{color:#3730A3}
+.t-light{--background:#FFFFFF;--foreground:#0A0A0B;--card:#FFFFFF;--muted:#F4F4F5;--muted-foreground:#5F5F67;--border:#E4E4E7;--input:#E4E4E7;--primary:#4F46E5;--primary-foreground:#FFFFFF;--primary-subtle:#EEF0FF;--destructive:#DC2626;--destructive-text:#B91C1C;--destructive-subtle:#FEF2F2;--ring:#4F46E5;--canvas:#F4F4F5}
+.t-dark{--background:#0A0A0B;--foreground:#EDEDEF;--card:#111113;--muted:#1C1C1F;--muted-foreground:#A1A1AA;--border:#27272A;--input:#27272A;--primary:#8B93FF;--primary-foreground:#0A0A0B;--primary-subtle:#1A1B33;--destructive:#DC2626;--destructive-text:#F87171;--destructive-subtle:#2A1214;--ring:#8B93FF;--canvas:#000000}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+.k{font:500 12px/1 'Geist Mono',ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground)}
+.h2{margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em}
+.p{margin:0;font-size:15px;line-height:1.6}
+.small{font-size:13px;line-height:1.55;color:var(--muted-foreground)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:8px;font:500 14px/1 'Geist',sans-serif;border:1px solid var(--border);background:var(--background);color:var(--foreground);cursor:pointer;white-space:nowrap}
+.btn:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.btn-sel{background:var(--foreground);color:var(--background);border-color:var(--foreground)}
+.stage{background:var(--background);border:1px solid var(--border);border-radius:12px;height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;color:var(--foreground)}
+.tiles{display:flex;gap:64px;align-items:flex-start}
+.tile{display:flex;flex-direction:column;align-items:center;gap:14px;width:150px}
+.orb-wrap{position:relative;width:112px;height:112px}
+.halo{position:absolute;inset:0;border-radius:50%;background:var(--primary);opacity:0;transition:transform 80ms linear,opacity 150ms ease-out}
+.orb{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--border);color:var(--muted-foreground);box-sizing:border-box;transition:background-color .15s ease-out,border-color .15s ease-out,color .15s ease-out}
+.orb .ic{width:30px;height:30px;stroke-width:1.75}
+.orb-on{border:2px solid var(--primary);background:var(--primary-subtle);color:var(--primary)}
+.orb-off{background:var(--muted);border-style:dashed}
+.dim{opacity:.45}
+.badge{position:absolute;right:2px;bottom:2px;width:30px;height:30px;border-radius:50%;background:var(--foreground);color:var(--background);display:grid;place-items:center;box-shadow:0 0 0 3px var(--background)}
+.badge .ic{width:14px;height:14px}
+.t-name{font:600 14px/1 'Geist';color:var(--foreground)}
+.t-state{font:500 12px/1 'Geist Mono',ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-foreground)}
+.t-state.on{color:var(--primary)}
+.cap{margin:0;font-size:14px;color:var(--muted-foreground);height:20px}
+.tbl{display:grid;border-top:1px solid var(--border)}
+.tbl>div{display:grid;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;line-height:1.5;align-items:baseline}
+pre{margin:0;white-space:pre;overflow:auto}
+@media (prefers-reduced-motion:reduce){.halo,.orb{transition:none}}
+</style>
+</helmet>
+<div class="t-light" style="width: 1440px; min-height: 2300px; box-sizing: border-box; padding: 96px 112px; background: #FFFFFF; color: #0A0A0B; display: flex; flex-direction: column; gap: 80px">
+
+<header style="display: flex; flex-direction: column; gap: 16px; max-width: 920px">
+<span class="k">Component spec · VoiceTile</span>
+<h1 style="margin: 0; font-size: 48px; line-height: 1.05; font-weight: 600; letter-spacing: -0.035em">Two orbs, one halo each</h1>
+<p class="p" style="color: #5F5F67">I kept two participants rather than a single shared waveform: with interruptions allowed, both sides can make sound at once, and two fixed positions answer “who is talking?” faster than one line that changes owner. The glow is replaced by a calm solid halo that scales with level, and only the speaker turns indigo. Press Play on this artboard to try it.</p>
+</header>
+
+<section style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="2">
+<div class="{{th.cls}}" style="background: var(--canvas); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<span class="k">{{th.name}}</span>
+<div class="stage">
+<div class="tiles">
+<div class="tile">
+<div class="orb-wrap">
+<div class="halo" style="transform: scale({{ai.scale}}); opacity: {{ai.opacity}}"></div>
+<div class="orb {{ai.orbCls}}"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div>
+</div>
+<span class="t-name">Interviewer</span>
+<span class="t-state {{ai.stateCls}}">{{ai.label}}</span>
+</div>
+<div class="tile">
+<div class="orb-wrap">
+<div class="halo" style="transform: scale({{me.scale}}); opacity: {{me.opacity}}"></div>
+<div class="orb {{me.orbCls}}"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div>
+<sc-if value="{{muted}}" hint-placeholder-val="{{ false }}">
+<span class="badge"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><line x1="2" x2="22" y1="2" y2="22"></line><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"></path><path d="M5 10v2a7 7 0 0 0 12 5"></path><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"></path><path d="M9 9v3a3 3 0 0 0 5.12 2.12"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg></span>
+</sc-if>
+</div>
+<span class="t-name">You</span>
+<span class="t-state {{me.stateCls}}">{{me.label}}</span>
+</div>
+</div>
+<p class="cap">{{caption}}</p>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span class="k" style="margin-right: 8px">Simulate</span>
+<button type="button" class="btn {{selAi}}" onClick="{{setAi}}">Interviewer speaks</button>
+<button type="button" class="btn {{selMe}}" onClick="{{setMe}}">You speak</button>
+<button type="button" class="btn {{selBoth}}" onClick="{{setBoth}}">You interrupt</button>
+<button type="button" class="btn {{selNone}}" onClick="{{setNone}}">Silence</button>
+<span style="width: 1px; height: 24px; background: #E4E4E7; margin: 0 8px"></span>
+<button type="button" class="btn {{selMute}}" aria-pressed="{{mutedStr}}" onClick="{{toggleMute}}">{{muteLabel}}</button>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h2 class="h2">Anatomy &amp; sizes</h2>
+<div class="tbl">
+<div style="grid-template-columns: 160px minmax(0, 1fr) 120px"><span class="k">Part</span><span class="k">Spec</span><span class="k">Mobile</span></div>
+<div style="grid-template-columns: 160px minmax(0, 1fr) 120px"><span>Orb</span><span>112px circle, <span class="mono">--card</span> fill, 1px <span class="mono">--border</span>. Icon 30px, stroke 1.75: <span class="mono">AudioLines</span> (Interviewer), <span class="mono">UserRound</span> (You)</span><span class="mono">88px · 26px</span></div>
+<div style="grid-template-columns: 160px minmax(0, 1fr) 120px"><span>Halo</span><span>Same size as the orb, sits behind it, solid <span class="mono">--primary</span>. Scale 1 → 1.35 (max 151px), so reserve 152px per tile</span><span class="mono">max 119px</span></div>
+<div style="grid-template-columns: 160px minmax(0, 1fr) 120px"><span>Name</span><span>Geist 600 14px, <span class="mono">--foreground</span>. Always visible: never colour-only</span><span class="mono">13px</span></div>
+<div style="grid-template-columns: 160px minmax(0, 1fr) 120px"><span>State label</span><span>Geist Mono 12px caps: SPEAKING (primary) · LISTENING · MUTED · PAUSED (muted-fg)</span><span class="mono">11px</span></div>
+<div style="grid-template-columns: 160px minmax(0, 1fr) 120px"><span>Mute badge</span><span>30px, <span class="mono">--foreground</span> fill, <span class="mono">MicOff</span> 14px, 3px ring in <span class="mono">--background</span>, bottom-right</span><span class="mono">26px</span></div>
+<div style="grid-template-columns: 160px minmax(0, 1fr) 120px"><span>Layout</span><span>Two tiles 150px wide, 64px apart, centred. Interviewer left, You right: same order everywhere</span><span class="mono">gap 40px</span></div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h2 class="h2">Level → visual</h2>
+<p class="p">The raw 0–1 level is smoothed (fast attack, slow release), gated, and put on a perceptual curve. Then it drives two CSS properties only, so no layout shift.</p>
+<pre class="mono" style="background: #F4F4F5; border-radius: 10px; padding: 20px; font-size: 13px; line-height: 1.75; color: #0A0A0B">smooth += (raw − smooth) × (raw &gt; smooth ? 0.5 : 0.12)
+v       = clamp((smooth − 0.02) / 0.5, 0, 1) ^ 0.6
+scale   = 1 + 0.35 × v
+opacity = speaking ? 0.14 + 0.36 × v : 0
+speaking: v &gt; 0.08 for 120ms → on · below for 350ms → off</pre>
+<div class="tbl">
+<div style="grid-template-columns: repeat(4, minmax(0, 1fr))"><span class="k">level (steady)</span><span class="k">v</span><span class="k">halo scale</span><span class="k">halo opacity</span></div>
+<div class="mono" style="grid-template-columns: repeat(4, minmax(0, 1fr))"><span>0.00–0.02</span><span>0</span><span>1.00</span><span>0 (idle)</span></div>
+<div class="mono" style="grid-template-columns: repeat(4, minmax(0, 1fr))"><span>0.10</span><span>0.33</span><span>1.12</span><span>0.26</span></div>
+<div class="mono" style="grid-template-columns: repeat(4, minmax(0, 1fr))"><span>0.25</span><span>0.63</span><span>1.22</span><span>0.37</span></div>
+<div class="mono" style="grid-template-columns: repeat(4, minmax(0, 1fr))"><span>0.50</span><span>0.98</span><span>1.34</span><span>0.49</span></div>
+<div class="mono" style="grid-template-columns: repeat(4, minmax(0, 1fr))"><span>1.00</span><span>1.00</span><span>1.35</span><span>0.50</span></div>
+</div>
+<p class="small">Opacity is capped at 0.5 so the halo never competes with text. The 350ms hang-over stops the label flickering between words.</p>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 24px">
+<h2 class="h2">States</h2>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+
+<div style="display: flex; flex-direction: column; gap: 14px; border: 1px solid #E4E4E7; border-radius: 12px; padding: 28px 20px; align-items: center">
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div></div><span class="t-name">You</span><span class="t-state">Listening</span></div>
+<span class="k" style="color: #0A0A0B; margin-top: 8px">Idle</span>
+<p class="small" style="margin: 0; text-align: center">Grey orb, 1px border, no halo. Level below the gate.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; border: 1px solid #E4E4E7; border-radius: 12px; padding: 28px 20px; align-items: center">
+<div class="tile"><div class="orb-wrap"><div class="halo" style="transform: scale(1.24); opacity: 0.38"></div><div class="orb orb-on"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div></div><span class="t-name">You</span><span class="t-state on">Speaking</span></div>
+<span class="k" style="color: #0A0A0B; margin-top: 8px">Speaking</span>
+<p class="small" style="margin: 0; text-align: center">2px primary border, primary-subtle fill, primary icon, halo live.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; border: 1px solid #E4E4E7; border-radius: 12px; padding: 28px 20px; align-items: center">
+<div class="tile"><div class="orb-wrap"><div class="halo"></div><div class="orb orb-off"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></div><span class="badge"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><line x1="2" x2="22" y1="2" y2="22"></line><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"></path><path d="M5 10v2a7 7 0 0 0 12 5"></path><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"></path><path d="M9 9v3a3 3 0 0 0 5.12 2.12"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg></span></div><span class="t-name">You</span><span class="t-state">Muted</span></div>
+<span class="k" style="color: #0A0A0B; margin-top: 8px">Muted · You only</span>
+<p class="small" style="margin: 0; text-align: center">Level forced to 0: flat. Muted fill, dashed border, MicOff badge.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; border: 1px solid #E4E4E7; border-radius: 12px; padding: 28px 20px; align-items: center">
+<div class="tile dim"><div class="orb-wrap"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div></div><span class="t-name">Interviewer</span><span class="t-state">&#8203;</span></div>
+<span class="k" style="color: #0A0A0B; margin-top: 8px">Connecting · Ending</span>
+<p class="small" style="margin: 0; text-align: center">Both tiles at 45% opacity, no label. The status pill carries the message.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; border: 1px solid #E4E4E7; border-radius: 12px; padding: 28px 20px; align-items: center">
+<div class="tile"><div class="orb-wrap dim"><div class="halo"></div><div class="orb"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg></div></div><span class="t-name">Interviewer</span><span class="t-state">Paused</span></div>
+<span class="k" style="color: #0A0A0B; margin-top: 8px">Reconnecting</span>
+<p class="small" style="margin: 0; text-align: center">Orbs dim, labels read PAUSED, halos frozen at 0 until audio resumes.</p>
+</div>
+</div>
+<p class="small" style="margin: 0; max-width: 980px">Turn-taking: when you start talking over the interviewer (barge-in), both tiles can be on for a moment. As soon as the server cuts the AI audio, the interviewer’s level drops and its tile goes idle on its own. The caption under the stage switches to “Go ahead, the interviewer is listening”. There’s no push-to-talk control anywhere.</p>
+</section>
+
+<section style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 64px">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h2 class="h2">Implementation</h2>
+<p class="p">Write the level to a CSS variable from requestAnimationFrame. Don’t put it in React state, or you get 60 re-renders a second. Only call <span class="mono">setSpeaking</span> when the debounced value flips.</p>
+<pre class="mono" style="background: #0A0A0B; color: #EDEDEF; border-radius: 12px; padding: 24px; font-size: 12.5px; line-height: 1.7">// useVoiceLevel.ts
+export function useVoiceLevel(ref, getLevel, muted, onSpeaking) {
+  useEffect(() =&gt; {
+    let raf = 0, smooth = 0, on = false, pending = 0;
+    const tick = (t) =&gt; {
+      const raw = muted ? 0 : getLevel();
+      smooth += (raw - smooth) * (raw &gt; smooth ? 0.5 : 0.12);
+      const g = Math.min(Math.max((smooth - 0.02) / 0.5, 0), 1);
+      const v = Math.pow(g, 0.6);
+      const want = v &gt; 0.08;
+      if (want === on) pending = t;
+      else if (t - pending &gt; (want ? 120 : 350)) {
+        on = want; pending = t; onSpeaking(on);
+      }
+      ref.current?.style.setProperty("--level", v.toFixed(3));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () =&gt; cancelAnimationFrame(raf);
+  }, [muted]);
+}
+
+/* VoiceTile halo, Tailwind v4 */
+.voice-halo {
+  @apply absolute inset-0 rounded-full bg-primary opacity-0;
+  transform: scale(calc(1 + 0.35 * var(--level, 0)));
+  transition: transform 80ms linear, opacity 150ms ease-out;
+}
+[data-speaking="true"] .voice-halo {
+  opacity: calc(0.14 + 0.36 * var(--level, 0));
+}
+@media (prefers-reduced-motion: reduce) {
+  .voice-halo { transform: scale(1.12); transition: none; }
+  [data-speaking="true"] .voice-halo { opacity: 0.3; }
+}</pre>
+</div>
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h2 class="h2">Accessibility</h2>
+<div class="tbl">
+<div style="grid-template-columns: 140px minmax(0, 1fr)"><span class="k">Orb + halo</span><span><span class="mono">aria-hidden="true"</span>. The visible name and state label are the accessible version</span></div>
+<div style="grid-template-columns: 140px minmax(0, 1fr)"><span class="k">Speaking</span><span>Not announced. A screen reader would talk over the interviewer’s voice. The audio is the signal</span></div>
+<div style="grid-template-columns: 140px minmax(0, 1fr)"><span class="k">Status</span><span>One <span class="mono">role="status" aria-live="polite"</span> region holds the pill text: Connecting, Live, Reconnecting, Ending. Errors use <span class="mono">role="alert"</span></span></div>
+<div style="grid-template-columns: 140px minmax(0, 1fr)"><span class="k">Mute</span><span><span class="mono">&lt;Button aria-pressed&gt;</span>. The label flips Mute ↔ Unmute and the icon Mic ↔ MicOff. Pressed style is inverted (foreground fill), not just a tint. Shortcut M, announced as “Microphone muted” or “Microphone on”</span></div>
+<div style="grid-template-columns: 140px minmax(0, 1fr)"><span class="k">Not colour-only</span><span>Speaking = colour + border weight + halo + text label. All four change together</span></div>
+<div style="grid-template-columns: 140px minmax(0, 1fr)"><span class="k">Reduced motion</span><span>Halo becomes a fixed 1.12 ring shown only while speaking. Spinners and the live dot stop</span></div>
+</div>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2300}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'ai', muted: false, t: 0 };
+  }
+  componentDidMount() {
+    var reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    this.reduce = reduce;
+    if (!reduce) {
+      var self = this;
+      this.iv = setInterval(function () { self.setState({ t: self.state.t + 1 }); }, 70);
+    }
+  }
+  componentWillUnmount() { if (this.iv) clearInterval(this.iv); }
+  lvl(on, seed) {
+    if (!on) return 0;
+    if (this.reduce) return 0.5;
+    var t = this.state.t * 0.35;
+    var x = 0.32 + 0.22 * Math.sin(t * 1.7 + seed) + 0.16 * Math.sin(t * 4.3 + seed * 2.1) + 0.12 * Math.sin(t * 9.1 + seed);
+    if (Math.sin(t * 0.6 + seed) > 0.85) x = x * 0.2;
+    return Math.max(0, Math.min(1, x));
+  }
+  tile(level, speaking, muted, reduce) {
+    var v = Math.pow(Math.max(0, Math.min(1, (level - 0.02) / 0.5)), 0.6);
+    var on = speaking && !muted;
+    var scale = reduce ? (on ? 1.12 : 1) : 1 + 0.35 * v;
+    var opacity = on ? (reduce ? 0.3 : 0.14 + 0.36 * v) : 0;
+    return {
+      scale: scale.toFixed(3),
+      opacity: opacity.toFixed(3),
+      orbCls: muted ? 'orb-off' : (on ? 'orb-on' : ''),
+      stateCls: on ? 'on' : '',
+      label: muted ? 'Muted' : (on ? 'Speaking' : 'Listening')
+    };
+  }
+  renderVals() {
+    var s = this.state, self = this;
+    var aiOn = s.mode === 'ai' || s.mode === 'both';
+    var meOn = (s.mode === 'me' || s.mode === 'both') && !s.muted;
+    var ai = this.tile(this.lvl(aiOn, 0.4), aiOn, false, this.reduce);
+    var me = this.tile(this.lvl(meOn, 2.2), meOn, s.muted, this.reduce);
+    if (aiOn && meOn) { ai.label = 'Paused'; ai.stateCls = ''; ai.orbCls = ''; ai.opacity = '0'; ai.scale = '1'; }
+    var caption = s.mode === 'ai' ? 'Interviewer is speaking' : s.mode === 'both' ? 'Go ahead, the interviewer is listening' : meOn ? 'Listening to you' : s.muted ? 'You’re muted' : 'Your turn';
+    if (s.muted && s.mode === 'ai') caption = 'Interviewer is speaking · you’re muted';
+    var set = function (m) { return function () { self.setState({ mode: m }); }; };
+    return {
+      themes: [{ cls: 't-light', name: 'Light' }, { cls: 't-dark', name: 'Dark' }],
+      ai: ai, me: me, muted: s.muted, mutedStr: s.muted ? 'true' : 'false',
+      caption: caption,
+      muteLabel: s.muted ? 'Unmute' : 'Mute',
+      selAi: s.mode === 'ai' ? 'btn-sel' : '', selMe: s.mode === 'me' ? 'btn-sel' : '',
+      selBoth: s.mode === 'both' ? 'btn-sel' : '', selNone: s.mode === 'none' ? 'btn-sel' : '',
+      selMute: s.muted ? 'btn-sel' : '',
+      setAi: set('ai'), setMe: set('me'), setBoth: set('both'), setNone: set('none'),
+      toggleMute: function () { self.setState({ muted: !self.state.muted }); }
+    };
+  }
+}
+</script>
+</body>
+</html>
