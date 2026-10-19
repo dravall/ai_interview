@@ -64,6 +64,7 @@ bun run dev
 | `PROXY_URL` | HTTPS proxy for the GitHub scrape (`scrapers/github.ts`) |
 | `GITHUB_TOKEN` | Optional. GitHub API token; raises the limit from 60 to 5,000 requests/hour |
 | `INTAKE_RATE_LIMIT` | Optional. Interviews one IP can start per 15 minutes (default 5) |
+| `TRUST_PROXY` | Set to the number of proxy hops (usually `1`) when deployed behind a load balancer, so rate limits see real client IPs. Leave unset locally. |
 | `FRONTEND_ORIGIN` | CORS allowlist — the origin allowed to call the API with credentials |
 | `NODE_ENV` | `development` \| `production` — controls the session cookie's `secure` flag |
 | `COOKIE_SAMESITE` | Set to `none` only for a cross-domain deployment (see Deployment below); leave unset for local dev |

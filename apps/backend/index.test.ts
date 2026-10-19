@@ -12,6 +12,8 @@ mock.module("./scrapers/github", () => ({
 
 // The suite makes more intake calls than the production limit of 5 per window.
 process.env.INTAKE_RATE_LIMIT ??= "50";
+// Lets tests act as different clients via X-Forwarded-For.
+process.env.TRUST_PROXY ??= "1";
 
 // Grading is mocked; tests swap `grade` to simulate slow or failing graders.
 const defaultGrade = async () => ({ feedback: "Nice work overall.", score: 7 });
@@ -203,6 +205,24 @@ describe.skipIf(!process.env.DATABASE_URL)("API integration", () => {
 
         expect((await agent.get(`/api/v1/result/${id}`)).status).toBe(403);
         expect((await request(app).get(`/api/v1/result/${id}`)).status).toBe(403);
+    });
+
+    test("rate limits are per client IP (behind a proxy) and per endpoint", async () => {
+        const unknown = "/api/v1/realtime/client-secret/00000000-0000-0000-0000-000000000000";
+        const remaining = (res: { headers: Record<string, string> }) => Number(res.headers["ratelimit-remaining"]);
+
+        const a1 = await request(app).post(unknown).set("X-Forwarded-For", "203.0.113.7");
+        const a2 = await request(app).post(unknown).set("X-Forwarded-For", "203.0.113.7");
+        const b1 = await request(app).post(unknown).set("X-Forwarded-For", "198.51.100.9");
+        expect(remaining(a2)).toBe(remaining(a1) - 1);
+        expect(remaining(b1)).toBe(remaining(a1));
+
+        // Sideband registrations come out of a different bucket.
+        const sideband = await request(app)
+            .post("/api/v1/realtime/sideband/00000000-0000-0000-0000-000000000000")
+            .set("X-Forwarded-For", "203.0.113.7");
+        expect(Number(sideband.headers["ratelimit-limit"])).toBe(20);
+        expect(Number(a1.headers["ratelimit-limit"])).toBe(10);
     });
 
     test("GET /api/v1/result/:id 404s for an unknown interview", async () => {

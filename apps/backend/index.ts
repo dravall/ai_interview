@@ -17,6 +17,13 @@ import {
 } from "./realtime";
 
 const app = express();
+
+// Behind a hosting platform's load balancer every request arrives from the
+// proxy's IP, so all users would share one rate-limit bucket. TRUST_PROXY=<hops>
+// makes req.ip come from X-Forwarded-For. Leave it unset when clients reach the
+// app directly, or they could spoof their IP to dodge the limits.
+const trustProxyHops = Number(process.env.TRUST_PROXY);
+if (Number.isInteger(trustProxyHops) && trustProxyHops > 0) app.set("trust proxy", trustProxyHops);
 app.use(cors({
   origin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000",
   credentials: true
@@ -76,13 +83,21 @@ const requireOwner: RequestHandler<{ interviewId: string }> = async (req, res, n
   next();
 };
 
-const preInterviewLimiter = rateLimit({
+// Per-IP limits over a 15-minute window, one bucket per endpoint so that, say,
+// reconnects don't use up the budget for starting interviews. In-memory: they
+// reset on restart and aren't shared between instances.
+const limiter = (limit: number) => rateLimit({
   windowMs: 15 * 60 * 1000,
-  // Each intake costs a GitHub API call; override for load tests or a GITHUB_TOKEN setup.
-  limit: Number(process.env.INTAKE_RATE_LIMIT) || 5,
+  limit,
   standardHeaders: true,
   legacyHeaders: false
 });
+
+// Each intake costs a GitHub API call; override for load tests or a GITHUB_TOKEN setup.
+const preInterviewLimiter = limiter(Number(process.env.INTAKE_RATE_LIMIT) || 5);
+const clientSecretLimiter = limiter(10); // each one opens a paid OpenAI session
+const sidebandLimiter = limiter(20);     // cheap, but each one opens a server WebSocket
+const retryLimiter = limiter(5);         // each one can trigger paid grading calls
 
 // Interview lifecycle and grading (see the state diagram in ARCHITECTURE.md).
 const END_SETTLE_MS = 5_000;            // max wait for the last transcript events on End
@@ -90,12 +105,6 @@ const IDLE_END_MS = 60_000;             // no live call + no activity this long 
 const GRADING_LEASE_MS = 2 * 60_000;    // a Grading claim older than this can be re-claimed
 const MAX_GRADING_ATTEMPTS = 3;         // automatic attempts before the user must retry
 
-const sessionLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: true,
-  legacyHeaders: false
-});
 
 app.post("/api/v1/pre-interview", preInterviewLimiter, async (req, res) => {
     const { success, data } = PreInterviewBody.safeParse(req.body) ;
@@ -145,7 +154,7 @@ app.post("/api/v1/pre-interview", preInterviewLimiter, async (req, res) => {
 // Mints a short-lived Realtime client secret. The browser uses it to do the
 // WebRTC SDP exchange with OpenAI directly; OPENAI_API_KEY never leaves the
 // server. Instructions, model and turn detection are fixed here, server-side.
-app.post("/api/v1/realtime/client-secret/:interviewId", sessionLimiter, requireOwner, async (req, res) => {
+app.post("/api/v1/realtime/client-secret/:interviewId", clientSecretLimiter, requireOwner, async (req, res) => {
     const interview = await prisma.interview.findFirst({
         where: { id: req.params.interviewId },
         include: { conversations: { orderBy: { createdAt: "asc" } } }
@@ -176,7 +185,7 @@ app.post("/api/v1/realtime/client-secret/:interviewId", sessionLimiter, requireO
 
 // The browser relays the call id from OpenAI's SDP answer so the server can
 // attach a sideband socket to the same call and persist the transcript.
-app.post("/api/v1/realtime/sideband/:interviewId", sessionLimiter, requireOwner, async (req, res) => {
+app.post("/api/v1/realtime/sideband/:interviewId", sidebandLimiter, requireOwner, async (req, res) => {
     const { callId } = req.body ?? {};
 
     if (!isValidCallId(callId)) {
@@ -205,7 +214,7 @@ app.post("/api/v1/interview/:interviewId/end", requireOwner, async (req, res) =>
 });
 
 // Manual retry after grading has failed MAX_GRADING_ATTEMPTS times in a row.
-app.post("/api/v1/result/:interviewId/retry", sessionLimiter, requireOwner, async (req, res) => {
+app.post("/api/v1/result/:interviewId/retry", retryLimiter, requireOwner, async (req, res) => {
     await prisma.interview.updateMany({
         where: { id: req.params.interviewId, status: "Failed" },
         data: { status: "Ended", gradingAttempts: 0 }
