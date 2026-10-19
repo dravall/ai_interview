@@ -7,7 +7,7 @@ import { scrapeGithub, type GithubLookupError } from "./scrapers/github";
 import cors from "cors";
 import { prisma } from "./db";
 import { endInterview, hasOpenSideband, initSideband } from "./sideband";
-import { calculateResult } from "./result";
+import { grader } from "./result";
 import {
   buildInstructions,
   createClientSecret,
@@ -288,7 +288,7 @@ app.get("/api/v1/result/:interviewId", requireOwner, async (req, res) => {
     // was reclaimed can't overwrite a newer one.
     const lease = { id: interviewId, status: "Grading" as const, gradingStartedAt: now };
     try {
-      const result = await calculateResult(interview.conversations);
+      const result = await grader.calculateResult(interview.conversations);
       await prisma.interview.updateMany({
         where: lease,
         data: { status: "Done", feedback: result.feedback, score: result.score }

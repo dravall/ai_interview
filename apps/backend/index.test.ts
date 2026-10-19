@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from "bun:test";
+import { afterAll, describe, expect, mock, test } from "bun:test";
 import request from "supertest";
 import type { Prisma } from "./generated/prisma/client";
 
@@ -15,19 +15,24 @@ process.env.INTAKE_RATE_LIMIT ??= "50";
 // Lets tests act as different clients via X-Forwarded-For.
 process.env.TRUST_PROXY ??= "1";
 
-// Grading is mocked; tests swap `grade` to simulate slow or failing graders.
+const { app } = await import("./index");
+const { prisma } = await import("./db");
+const { grader } = await import("./result");
+
+// Grading is stubbed through the grader object, not mock.module: Bun's module
+// mocks are process-wide and would replace the real grader in result.test.ts.
+// Tests swap `grade` to simulate slow or failing graders.
 const defaultGrade = async () => ({ feedback: "Nice work overall.", score: 7 });
 let grade = defaultGrade;
 let gradeCalls = 0;
-mock.module("./result", () => ({
-    calculateResult: async () => {
-        gradeCalls++;
-        return grade();
-    },
-}));
-
-const { app } = await import("./index");
-const { prisma } = await import("./db");
+const realCalculateResult = grader.calculateResult;
+grader.calculateResult = async () => {
+    gradeCalls++;
+    return grade();
+};
+afterAll(() => {
+    grader.calculateResult = realCalculateResult;
+});
 
 /** Creates an interview directly in the DB, owned by a fresh session; returns that session's agent. */
 async function createInterview(data: Partial<Prisma.InterviewUncheckedCreateInput> = {}) {

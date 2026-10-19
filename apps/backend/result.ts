@@ -114,3 +114,10 @@ export async function calculateResult(messages: TranscriptMessage[]) {
     }
     return outputSchema.parse(parsed);
 }
+
+/**
+ * What the API calls to grade. Tests replace grader.calculateResult instead of
+ * using mock.module, which is process-wide in Bun and would leak into
+ * result.test.ts when the test files share a process.
+ */
+export const grader = { calculateResult };
