@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import { connectRealtime, waitForOpen, type RealtimeConnection } from "@/lib/realtime";
+import { connectRealtime, waitForOpen, type RealtimeConnection, type RealtimeServerEvent } from "@/lib/realtime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { isAxiosError } from "axios";
@@ -12,6 +12,12 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 
 const MAX_RECONNECT_ATTEMPTS = 3;
+// The mic stays off while the interviewer's opening plays: browser echo
+// cancellation needs a few seconds to adapt, and until then the interviewer
+// can hear itself through the speakers and interrupt its own greeting.
+const GREETING_GUARD_MAX_MS = 30_000;
+// On End, how long to wait for the transcript of a half-finished answer.
+const FINAL_TRANSCRIPT_WAIT_MS = 3_000;
 
 type ErrorInfo = { kind: "mic" | "service" | "network"; title: string; body: string };
 
@@ -86,6 +92,7 @@ export function Interview() {
     const [aiHasSpoken, setAiHasSpoken] = useState(false);
     const [userHasSpoken, setUserHasSpoken] = useState(false);
     const [announcement, setAnnouncement] = useState("");
+    const [greeting, setGreeting] = useState(false);
 
     // Live across reconnects: the mic, audio graph and output element.
     // Only the RTCPeerConnection is replaced when a call drops.
@@ -97,6 +104,17 @@ export function Interview() {
     const retryRef = useRef<() => void>(() => {});
     const stopRef = useRef<() => void>(() => {});
     const tryAgainRef = useRef<HTMLButtonElement>(null);
+    const audioElRef = useRef<HTMLAudioElement | null>(null);
+    const mutedRef = useRef(false);
+    const greetingRef = useRef(false);
+    // Extra listeners for data-channel events (used by the End flow).
+    const eventListenersRef = useRef(new Set<(event: RealtimeServerEvent) => void>());
+
+    /** The mic sends audio only when the user isn't muted and the greeting guard is off. */
+    const applyMic = useCallback(() => {
+        const track = micStreamRef.current?.getAudioTracks()[0];
+        if (track) track.enabled = !mutedRef.current && !greetingRef.current;
+    }, []);
 
     useEffect(() => {
         if (!interviewId) return;
@@ -111,6 +129,16 @@ export function Interview() {
 
         const audioEl = document.createElement("audio");
         audioEl.autoplay = true;
+        audioElRef.current = audioEl;
+        let greetingTimer: ReturnType<typeof setTimeout> | null = null;
+
+        function endGreetingGuard() {
+            if (greetingTimer) clearTimeout(greetingTimer);
+            greetingTimer = null;
+            greetingRef.current = false;
+            setGreeting(false);
+            applyMic();
+        }
 
         const audioCtx = new AudioContext();
         audioCtxRef.current = audioCtx;
@@ -160,6 +188,11 @@ export function Interview() {
                         aiMeterRef.current = createLevelMeter(audioCtx, stream);
                     },
                     onEvent: (event) => {
+                        eventListenersRef.current.forEach((listener) => listener(event));
+                        // WebRTC-only event: the interviewer's audio finished playing.
+                        if (greetingRef.current && (event.type === "output_audio_buffer.stopped" || event.type === "output_audio_buffer.cleared")) {
+                            endGreetingGuard();
+                        }
                         if (event.type !== "error") return;
                         const err = event.error as { code?: string; message?: string } | undefined;
                         console.error("Realtime error event:", err);
@@ -178,7 +211,11 @@ export function Interview() {
 
                 await waitForOpen(conn.dc);
                 // The interviewer speaks first (or, after a reconnect, picks
-                // the conversation back up).
+                // the conversation back up), with the mic held off until it's done.
+                greetingRef.current = true;
+                setGreeting(true);
+                applyMic();
+                greetingTimer = setTimeout(endGreetingGuard, GREETING_GUARD_MAX_MS);
                 conn.send({ type: "response.create" });
 
                 attempts = 0;
@@ -199,6 +236,7 @@ export function Interview() {
         stopRef.current = () => {
             stopped = true;
             if (retryTimer) clearTimeout(retryTimer);
+            if (greetingTimer) clearTimeout(greetingTimer);
             connRef.current?.close();
             connRef.current = null;
             micStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -213,7 +251,7 @@ export function Interview() {
         connect();
 
         return () => stopRef.current();
-    }, [interviewId]);
+    }, [interviewId, applyMic]);
 
     // The clock runs only while live: paused during reconnects, frozen on end.
     useEffect(() => {
@@ -227,13 +265,13 @@ export function Interview() {
     }, [status]);
 
     const toggleMute = useCallback(() => {
-        const track = micStreamRef.current?.getAudioTracks()[0];
-        if (!track) return;
+        if (!micStreamRef.current) return;
         // A disabled track sends silence, so server VAD sees no speech.
-        track.enabled = muted;
+        mutedRef.current = !muted;
+        applyMic();
         setMuted(!muted);
         setAnnouncement(muted ? "Microphone on" : "Microphone muted");
-    }, [muted]);
+    }, [muted, applyMic]);
 
     // M toggles mute, unless the user is typing somewhere.
     useEffect(() => {
@@ -249,8 +287,44 @@ export function Interview() {
         return () => window.removeEventListener("keydown", onKey);
     }, [status, toggleMute]);
 
+    /**
+     * With "let the candidate pause" turn detection, an answer cut off by End
+     * hasn't been committed as a turn yet, so it would never be transcribed.
+     * Commit it explicitly and give the transcription a moment to arrive.
+     */
+    async function finalizeTranscript() {
+        const conn = connRef.current;
+        if (!conn || conn.dc.readyState !== "open") return;
+
+        if (audioElRef.current) audioElRef.current.muted = true;
+        conn.send({ type: "input_audio_buffer.commit" });
+        greetingRef.current = true; // reuse the guard to stop sending mic audio
+        applyMic();
+
+        await new Promise<void>((resolve) => {
+            const listeners = eventListenersRef.current;
+            const finish = () => {
+                listeners.delete(onEvent);
+                clearTimeout(timer);
+                resolve();
+            };
+            const onEvent = (event: RealtimeServerEvent) => {
+                const code = (event.error as { code?: string } | undefined)?.code ?? "";
+                if (
+                    event.type === "conversation.item.input_audio_transcription.completed" ||
+                    event.type === "conversation.item.input_audio_transcription.failed" ||
+                    // Nothing pending (e.g. the answer was already complete).
+                    (event.type === "error" && code.includes("buffer"))
+                ) finish();
+            };
+            const timer = setTimeout(finish, FINAL_TRANSCRIPT_WAIT_MS);
+            listeners.add(onEvent);
+        });
+    }
+
     async function endInterview() {
         setStatus("ending");
+        await finalizeTranscript();
         stopRef.current();
         // Lets the server wait for the last transcript events before grading.
         // If it fails, the server still ends the interview when the call closes.
@@ -278,7 +352,10 @@ export function Interview() {
         caption = "Wrapping up…";
         sub = "Taking you to your results.";
     } else if (status === "live") {
-        if (muted) caption = "You’re muted. Unmute to answer.";
+        if (greeting) {
+            caption = "The interviewer is introducing the interview";
+            sub = "Your microphone turns on when it finishes.";
+        } else if (muted) caption = "You’re muted. Unmute to answer.";
         else if (userSpeaking) caption = "Go ahead, the interviewer is listening";
         else if (aiSpeaking) {
             caption = "Interviewer is speaking";
