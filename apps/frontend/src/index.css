@@ -1,0 +1,12 @@
+@import "../styles/globals.css";
+
+@layer base {
+  html,
+  body {
+    @apply m-0 min-h-dvh min-w-[320px];
+  }
+
+  #root {
+    @apply min-h-dvh;
+  }
+}
