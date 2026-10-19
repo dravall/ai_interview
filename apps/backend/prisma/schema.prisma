@@ -20,6 +20,10 @@ model Interview {
   conversations     Message[]
   feedback          String?
   ownerId           String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+
+  @@index([ownerId])
 }
 
 model Message {
@@ -29,6 +33,9 @@ model Message {
   interviewId     String
   interview       Interview   @relation(fields: [interviewId], references: [id])
   createdAt       DateTime    @default(now())
+
+  // Every results poll loads an interview's messages in order.
+  @@index([interviewId, createdAt])
 }
 
 enum MessageType {
