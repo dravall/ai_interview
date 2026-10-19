@@ -20,6 +20,9 @@ model Interview {
   conversations     Message[]
   feedback          String?
   ownerId           String?
+  // Grading lease: a Grading row whose lease is stale can be re-claimed.
+  gradingStartedAt  DateTime?
+  gradingAttempts   Int       @default(0)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @default(now()) @updatedAt
 
@@ -46,6 +49,7 @@ enum MessageType {
 enum InterviewStatus {
   Pre
   InProgress
+  Ended
   Grading
   Done
   Failed

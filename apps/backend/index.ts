@@ -6,7 +6,7 @@ import { parseGithubUsername, PreInterviewBody } from "./types";
 import { scrapeGithub, type GithubLookupError } from "./scrapers/github";
 import cors from "cors";
 import { prisma } from "./db";
-import { initSideband } from "./sideband";
+import { endInterview, hasOpenSideband, initSideband } from "./sideband";
 import { calculateResult } from "./result";
 import {
   buildInstructions,
@@ -82,6 +82,12 @@ const preInterviewLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false
 });
+
+// Interview lifecycle and grading (see the state diagram in ARCHITECTURE.md).
+const END_SETTLE_MS = 5_000;            // max wait for the last transcript events on End
+const IDLE_END_MS = 60_000;             // no live call + no activity this long => ended
+const GRADING_LEASE_MS = 2 * 60_000;    // a Grading claim older than this can be re-claimed
+const MAX_GRADING_ATTEMPTS = 3;         // automatic attempts before the user must retry
 
 const sessionLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -169,7 +175,7 @@ app.post("/api/v1/realtime/client-secret/:interviewId", sessionLimiter, requireO
 
 // The browser relays the call id from OpenAI's SDP answer so the server can
 // attach a sideband socket to the same call and persist the transcript.
-app.post("/api/v1/realtime/sideband/:interviewId", sessionLimiter, requireOwner, (req, res) => {
+app.post("/api/v1/realtime/sideband/:interviewId", sessionLimiter, requireOwner, async (req, res) => {
     const { callId } = req.body ?? {};
 
     if (!isValidCallId(callId)) {
@@ -177,14 +183,40 @@ app.post("/api/v1/realtime/sideband/:interviewId", sessionLimiter, requireOwner,
         return;
     }
 
+    // "Ended" is included so a reconnect after a long drop revives the interview
+    // instead of leaving it graded on a partial transcript.
+    await prisma.interview.updateMany({
+        where: { id: req.params.interviewId, status: { in: ["Pre", "InProgress", "Ended"] } },
+        data: { status: "InProgress" }
+    });
+
     initSideband(callId, req.params.interviewId);
     res.status(204).end();
 });
 
+// Called by the browser when the candidate clicks End. Waits (up to 5 s) for the
+// call's last transcript events to be saved, then marks the interview Ended so
+// it becomes gradeable. If this request never arrives (tab closed), the
+// sideband's close handler ends the interview instead.
+app.post("/api/v1/interview/:interviewId/end", requireOwner, async (req, res) => {
+    await endInterview(req.params.interviewId, END_SETTLE_MS);
+    res.status(204).end();
+});
+
+// Manual retry after grading has failed MAX_GRADING_ATTEMPTS times in a row.
+app.post("/api/v1/result/:interviewId/retry", sessionLimiter, requireOwner, async (req, res) => {
+    await prisma.interview.updateMany({
+        where: { id: req.params.interviewId, status: "Failed" },
+        data: { status: "Ended", gradingAttempts: 0 }
+    });
+    res.status(204).end();
+});
+
 app.get("/api/v1/result/:interviewId", requireOwner, async (req, res) => {
+  const interviewId = req.params.interviewId;
   const interview = await prisma.interview.findFirst({
     where: {
-      id: req.params.interviewId
+      id: interviewId
     },
     include: {
       // Without an explicit order Postgres may return rows in any order, which
@@ -200,51 +232,65 @@ app.get("/api/v1/result/:interviewId", requireOwner, async (req, res) => {
     return
   }
 
-  let { status, score, feedback } = interview;
-
-  // Atomically claim the row before grading so concurrent polls can't
-  // both trigger a grading call for the same interview.
-  if (status === "Pre" || status === "Failed") {
-    const claim = await prisma.interview.updateMany({
-      where: { id: interview.id, status },
-      data: { status: "Grading" }
-    });
-
-    if (claim.count === 1) {
-      try {
-        const result = await calculateResult(interview.conversations);
-
-        await prisma.interview.update({
-          where: { id: interview.id },
-          data: {
-            status: "Done",
-            feedback: result.feedback,
-            score: result.score
-          }
-        });
-
-        status = "Done";
-        feedback = result.feedback;
-        score = result.score;
-      } catch (error) {
-        console.error("Grading failed:", error);
-
-        await prisma.interview.update({
-          where: { id: interview.id },
-          data: { status: "Failed" }
-        });
-
-        status = "Failed";
-      }
-    } else {
-      // Another poll already claimed grading; report the current state.
-      status = "Grading";
+  // Recovery for interviews that never got an explicit end and whose close
+  // timer was lost (e.g. the server restarted): no live call and nothing new
+  // for a while means it's over.
+  if ((interview.status === "Pre" || interview.status === "InProgress") && !hasOpenSideband(interviewId)) {
+    const lastMessage = interview.conversations.at(-1);
+    const lastActivity = Math.max(interview.updatedAt.getTime(), lastMessage?.createdAt.getTime() ?? 0);
+    if (Date.now() - lastActivity > IDLE_END_MS) {
+      await endInterview(interviewId, 0);
     }
   }
 
+  // Atomically claim the row before grading so concurrent polls can't both
+  // trigger a (paid) grading call. Claimable: ended interviews, failed ones
+  // with attempts left, and Grading rows whose lease is stale because the
+  // process grading them died.
+  const now = new Date();
+  const claim = await prisma.interview.updateMany({
+    where: {
+      id: interviewId,
+      OR: [
+        { status: "Ended" },
+        { status: "Failed", gradingAttempts: { lt: MAX_GRADING_ATTEMPTS } },
+        { status: "Grading", gradingStartedAt: { lt: new Date(now.getTime() - GRADING_LEASE_MS) } }
+      ]
+    },
+    data: { status: "Grading", gradingStartedAt: now, gradingAttempts: { increment: 1 } }
+  });
+
+  if (claim.count === 1) {
+    // Writes are guarded by this attempt's lease, so a slow attempt whose lease
+    // was reclaimed can't overwrite a newer one.
+    const lease = { id: interviewId, status: "Grading" as const, gradingStartedAt: now };
+    try {
+      const result = await calculateResult(interview.conversations);
+      await prisma.interview.updateMany({
+        where: lease,
+        data: { status: "Done", feedback: result.feedback, score: result.score }
+      });
+    } catch (error) {
+      console.error("Grading failed:", error);
+      await prisma.interview.updateMany({ where: lease, data: { status: "Failed" } });
+    }
+  }
+
+  const current = await prisma.interview.findFirst({ where: { id: interviewId } });
+  if (!current) {
+    res.status(404).json({ message: "Interview not found" })
+    return
+  }
+
+  // A failure with attempts left will be retried on the next poll, so to the
+  // client it's still grading. "Failed" means the user has to press Try again.
+  const status = current.status === "Failed" && current.gradingAttempts < MAX_GRADING_ATTEMPTS
+    ? "Grading"
+    : current.status;
+
   res.json({
-    score,
-    feedback,
+    score: current.score,
+    feedback: current.feedback,
     transcript: interview.conversations.map(c => ({
       type: c.type,
       content: c.message,

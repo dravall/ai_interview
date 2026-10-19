@@ -1,3 +1,4 @@
+import { api } from "@/lib/api";
 import { connectRealtime, waitForOpen, type RealtimeConnection } from "@/lib/realtime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -248,9 +249,12 @@ export function Interview() {
         return () => window.removeEventListener("keydown", onKey);
     }, [status, toggleMute]);
 
-    function endInterview() {
+    async function endInterview() {
         setStatus("ending");
         stopRef.current();
+        // Lets the server wait for the last transcript events before grading.
+        // If it fails, the server still ends the interview when the call closes.
+        await api.post(`/api/v1/interview/${interviewId}/end`).catch(() => {});
         navigate(`/result/${interviewId}`);
     }
 

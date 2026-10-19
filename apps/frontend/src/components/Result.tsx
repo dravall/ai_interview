@@ -11,7 +11,7 @@ interface ResultData {
     transcript: { type: "Assistant" | "User"; content: string; createdAt: string }[];
     score: number;
     feedback: string;
-    status: "Done" | "InProgress" | "Pre" | "Grading" | "Failed";
+    status: "Pre" | "InProgress" | "Ended" | "Grading" | "Done" | "Failed";
 }
 
 const SLOW_GRADING_MS = 90_000;
@@ -65,6 +65,14 @@ export function Result() {
 
     const ready = result.status === "Done";
     const failed = result.status === "Failed";
+    // The call hasn't been closed out yet, so the transcript may still be arriving.
+    const finishing = result.status === "Pre" || result.status === "InProgress";
+
+    async function retryGrading() {
+        await api.post(`/api/v1/result/${interviewId}/retry`).catch(() => {});
+        setResult((r) => ({ ...r, status: "Ended" }));
+        setRetryKey((k) => k + 1);
+    }
 
     useEffect(() => {
         if (failed) tryAgainRef.current?.focus();
@@ -109,7 +117,7 @@ export function Result() {
                             grading it again.
                         </p>
                         <div className="mt-6 flex flex-wrap justify-center gap-3">
-                            <Button ref={tryAgainRef} size="lg" onClick={() => setRetryKey((k) => k + 1)}>
+                            <Button ref={tryAgainRef} size="lg" onClick={retryGrading}>
                                 <RotateCcw />
                                 Try again
                             </Button>
@@ -119,7 +127,7 @@ export function Result() {
                         </div>
                     </div>
                 ) : !ready ? (
-                    <Grading slow={slow} offline={loadError === "network"} />
+                    <Grading slow={slow} offline={loadError === "network"} finishing={finishing} />
                 ) : (
                     <Done result={result} />
                 )}
@@ -128,17 +136,20 @@ export function Result() {
     );
 }
 
-function Grading({ slow, offline }: { slow: boolean; offline: boolean }) {
+function Grading({ slow, offline, finishing }: { slow: boolean; offline: boolean; finishing: boolean }) {
     return (
         <div>
             <h1 className="sr-only">Interview results</h1>
             <div role="status" className="flex items-start gap-3">
                 <LoaderCircle aria-hidden className="mt-0.5 size-5 shrink-0 animate-spin text-primary" />
                 <div>
-                    <p className="text-lg font-semibold">Analyzing your interview…</p>
+                    <p className="text-lg font-semibold">
+                        {finishing ? "Finishing your transcript…" : "Analyzing your interview…"}
+                    </p>
                     <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                        We’re scoring your answers and writing feedback. This page updates by itself, usually
-                        within a minute.
+                        {finishing
+                            ? "We’re saving the last part of your conversation before scoring it. This page updates by itself."
+                            : "We’re scoring your answers and writing feedback. This page updates by itself, usually within a minute."}
                     </p>
                     {offline ? (
                         <p className="mt-2 flex items-center gap-1.5 text-sm text-destructive-text">
