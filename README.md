@@ -57,6 +57,8 @@ bun run dev
 | `OPENAI_API_KEY` | OpenAI Realtime API — mints client secrets + sideband transcript capture. Server-only. (`OPENAI_KEY`, the old name, is still read as a fallback.) |
 | `OPENAI_REALTIME_MODEL` | Optional Realtime model (default `gpt-realtime-2.1-mini`) |
 | `OPENAI_REALTIME_VOICE` | Optional Realtime voice (default `marin`) |
+| `OPENAI_REALTIME_NOISE_REDUCTION` | Optional. `far_field` (laptop/room mic, default) or `near_field` (headset) |
+| `OPENAI_REALTIME_VAD` | Optional. `semantic` (default; lets the candidate pause) or `server` (loudness threshold, for noisy rooms) |
 | `OPENROUTER_API_KEY` | OpenRouter — post-interview grading |
 | `OPENROUTER_MODEL` | Optional grading model slug (default `qwen/qwen3.8-flash`) |
 | `PROXY_URL` | HTTPS proxy for the GitHub scrape (`scrapers/github.ts`) |

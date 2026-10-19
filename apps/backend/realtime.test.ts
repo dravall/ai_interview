@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildInstructions, isValidCallId, REALTIME_MODEL, safetyIdentifier } from "./realtime";
+import { buildInstructions, isValidCallId, REALTIME_MODEL, safetyIdentifier, turnDetection } from "./realtime";
 
 describe("realtime", () => {
     test("defaults to gpt-realtime-2.1-mini", () => {
@@ -40,5 +40,10 @@ describe("realtime", () => {
         expect(id).toBe(safetyIdentifier("session-123"));
         expect(id).not.toContain("session-123");
         expect(id).toMatch(/^[0-9a-f]{64}$/);
+    });
+
+    test("turn detection lets candidates pause by default and keeps barge-in in both modes", () => {
+        expect(turnDetection(undefined)).toMatchObject({ type: "semantic_vad", eagerness: "low", interrupt_response: true });
+        expect(turnDetection("server")).toMatchObject({ type: "server_vad", threshold: 0.7, interrupt_response: true });
     });
 });

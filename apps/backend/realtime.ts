@@ -3,6 +3,27 @@ import { createHash } from "node:crypto";
 export const REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2.1-mini";
 export const REALTIME_VOICE = process.env.OPENAI_REALTIME_VOICE || "marin";
 
+// "far_field" suits laptop and room microphones; "near_field" suits headsets.
+export const REALTIME_NOISE_REDUCTION =
+    process.env.OPENAI_REALTIME_NOISE_REDUCTION === "near_field" ? "near_field" : "far_field";
+
+/**
+ * Server-side turn detection. Either mode keeps interrupt_response on, so the
+ * candidate can talk over the interviewer (barge-in) and WebRTC truncates the
+ * unplayed audio.
+ * - "semantic" (default): ends a turn when the candidate sounds finished.
+ *   Eagerness "low" lets them pause to think without being cut off.
+ * - "server": plain voice-activity detection with a loudness threshold; use it
+ *   in noisy rooms, where a higher threshold ignores background sound.
+ */
+export function turnDetection(mode = process.env.OPENAI_REALTIME_VAD) {
+    const common = { create_response: true, interrupt_response: true };
+    if (mode === "server") {
+        return { type: "server_vad", threshold: 0.7, prefix_padding_ms: 300, silence_duration_ms: 1000, ...common };
+    }
+    return { type: "semantic_vad", eagerness: "low", ...common };
+}
+
 // The client secret only has to survive the browser's SDP exchange, which
 // happens immediately; once the call is up the session outlives the secret.
 const CLIENT_SECRET_TTL_SECONDS = 120;
@@ -51,6 +72,10 @@ scores the transcript afterwards, so your job is to draw out evidence, not to ju
 - This is spoken audio. Keep every turn to 1–3 short sentences. Ask ONE question at a time.
 - No lists, markdown, code, URLs or long preambles. Say repo names naturally.
 - If the candidate starts talking, stop and listen.
+- Be patient. Candidates pause to think, and pauses are not the end of an answer. If an answer
+  trails off mid-sentence, wait; if you must say something, use a short "Take your time."
+- Background noise, coughs, typing or other voices are not answers. If you only heard noise
+  or a fragment, don't move on to a new question; at most ask them to continue.
 
 # Language
 - English only, even if the candidate uses another language. If they do, politely ask to continue in English.
@@ -116,20 +141,12 @@ export async function createClientSecret(opts: { instructions: string; sessionId
                 instructions: opts.instructions,
                 audio: {
                     input: {
-                        noise_reduction: { type: "near_field" },
+                        noise_reduction: { type: REALTIME_NOISE_REDUCTION },
                         // Text copy of the candidate's speech for the sideband to
                         // persist (grading needs it). The conversation itself is
                         // speech-to-speech; this doesn't feed the model.
                         transcription: { model: "gpt-4o-mini-transcribe" },
-                        // Server-side VAD drives turn-taking; interrupt_response
-                        // cancels the model's reply when the candidate talks over
-                        // it (barge-in), and WebRTC truncates the unplayed audio.
-                        turn_detection: {
-                            type: "semantic_vad",
-                            eagerness: "auto",
-                            create_response: true,
-                            interrupt_response: true,
-                        },
+                        turn_detection: turnDetection(),
                     },
                     output: { voice: REALTIME_VOICE },
                 },
