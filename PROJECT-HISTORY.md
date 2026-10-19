@@ -122,6 +122,28 @@ AI assistance: none | Claude Code (what it did) | …
   - The End-mid-answer path was exercised only in its empty-buffer case (the candidate was silent at End). The case where speech is still in progress hasn't been seen live yet.
 - **AI assistance:** Claude Code implemented and tested; I ran the live voice tests.
 
+### 2026-10-19 — Phase 3: robustness and security (6 commits)
+- **Commits:**
+  - `e80d432`: test database (fix 17)
+  - `8ae4d9b`: quiet the expected empty-buffer error (fix 18)
+  - `416c5fd`: deny owner-less interviews (B12)
+  - `ea323e3`: proxy-aware, per-endpoint rate limits (B9)
+  - `57af44e`: security headers
+  - `8fed3a8`: sideband reconnect (B7) + true speech order and idempotent saves (B3b)
+- **What:**
+  - Tests use `ai_interviewer_test` via `.env.test` (`bun run test:setup` creates it).
+  - Interviews with no owner return 403.
+  - `TRUST_PROXY` setting; separate rate limits for client secret (10), sideband (20) and retry (5).
+  - nosniff, DENY, CSP, no-referrer and no-store headers; no `X-Powered-By`.
+  - A dropped sideband reconnects to the same call 3 times before the interview is treated as over.
+  - Turns are timed by when they were spoken; messages are unique per OpenAI item.
+- **How verified:**
+  - 47/47 tests, stable across two runs.
+  - A full test run left the dev database untouched.
+  - `prisma migrate diff` against the schema is empty after the hand-written `itemId` migration.
+  - Not yet confirmed live: real OpenAI `conversation.item.added` events supplying the spoken-at times. If they don't arrive, turns fall back to arrival time, the old behaviour.
+- **AI assistance:** Claude Code implemented and tested.
+
 ---
 
 ## 5. Planned fixes (status tracker)
@@ -139,17 +161,17 @@ From the fix plan; details and reasoning in [PROJECT-DEEP-DIVE.md §18](PROJECT-
 | 7 | Explicit "end interview" + `InProgress`/`Ended` lifecycle before grading | B2 | 2 | ✅ done | `3e0295d`, `674efb4` |
 | 8 | Grader hardening: rubric, injection guard, 0–10 bounds, skip empty transcripts | B5 | 2 | ✅ done | `ea0a51d` |
 | 9 | Grading lease + retry cap + explicit retry endpoint; concurrency test | B6 | 2 | ✅ done | `3e0295d` |
-| 10 | Sideband error handling + reconnect | B7 | 3 | ☐ planned | |
-| 11 | True speech order + idempotent messages (OpenAI item ids) | B3b | 3 | ☐ planned | |
-| 12 | Proxy-aware rate limits, separate buckets | B9 | 3 | ☐ planned | |
-| 13 | Deny interviews without an owner | B12 | 3 | ☐ planned | |
-| 14 | Basic security headers | — | 3 | ☐ planned | |
+| 10 | Sideband error handling + reconnect | B7 | 3 | ✅ done | `8fed3a8` |
+| 11 | True speech order + idempotent messages (OpenAI item ids) | B3b | 3 | ✅ done | `8fed3a8` |
+| 12 | Proxy-aware rate limits, separate buckets | B9 | 3 | ✅ done | `ea323e3` |
+| 13 | Deny interviews without an owner | B12 | 3 | ✅ done | `416c5fd` |
+| 14 | Basic security headers | — | 3 | ✅ done | `57af44e` |
 | 15 | Remove dead files (`packages/ui`, template routes, …); `image.png` already gone | B13 | 4 | ☐ planned (image.png ✔) | |
 | 16 | Mark `HIRING_COMMITTEE_REVIEW.md` historical; refresh README and reports | D1 | 4 | ☐ planned | |
 | — | Found in live testing: interviewer cut answers off and reacted to noise | — | 2 | ✅ done | `7dce632` |
 | — | Found in live testing: echo restarted the greeting; answer cut off by End not transcribed | — | 2 | ✅ done | `674efb4` |
-| 17 | Point tests at a separate database (they currently write rows into the dev DB) | — | 3 | ☐ planned | |
-| 18 | Don't log the expected `input_audio_buffer_commit_empty` error from the End flow | — | 3 | ☐ planned | |
+| 17 | Point tests at a separate database (they currently write rows into the dev DB) | — | 3 | ✅ done | `e80d432` |
+| 18 | Don't log the expected `input_audio_buffer_commit_empty` error from the End flow | — | 3 | ✅ done | `8ae4d9b` |
 
 **Decisions (2026-10-19):**
 - **Fix 7:** add the explicit end endpoint and the `InProgress` → `Ended` statuses; results show "Finishing your transcript…" until the call has ended.
