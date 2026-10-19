@@ -113,6 +113,9 @@ export function initSideband(callId: string, interviewId: string) {
             // A response cancelled by barge-in before any audio has no transcript.
             if (assistantMessage) save("Assistant", assistantMessage);
         } else if (parsedMessage.type == "error") {
+            // Expected: on End the browser commits any half-finished answer, and
+            // OpenAI reports an empty buffer when the candidate wasn't speaking.
+            if (parsedMessage.error?.code === "input_audio_buffer_commit_empty") return;
             console.error(`Realtime error (interview ${interviewId}):`, parsedMessage.error);
         }
     });

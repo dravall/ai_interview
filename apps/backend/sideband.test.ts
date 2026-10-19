@@ -117,4 +117,20 @@ describe("sideband", () => {
         expect(log).toEqual([]);
         expect(hasOpenSideband("i5")).toBe(true);
     });
+
+    test("doesn't log the empty-buffer response to End's commit, but logs real errors", async () => {
+        const logged: unknown[] = [];
+        const realError = console.error;
+        console.error = (...args: unknown[]) => { logged.push(args); };
+        try {
+            const ws = connect("i6");
+            ws.receive({ type: "error", error: { code: "input_audio_buffer_commit_empty" } });
+            expect(logged).toHaveLength(0);
+            ws.receive({ type: "error", error: { code: "session_expired" } });
+            expect(logged).toHaveLength(1);
+            await endInterview("i6", 0);
+        } finally {
+            console.error = realError;
+        }
+    });
 });
