@@ -144,6 +144,15 @@ AI assistance: none | Claude Code (what it did) | …
   - Not yet confirmed live: real OpenAI `conversation.item.added` events supplying the spoken-at times. If they don't arrive, turns fall back to arrival time, the old behaviour.
 - **AI assistance:** Claude Code implemented and tested.
 
+### 2026-10-20 — CI fixed (first green run)            commit: `610326d`
+- **Problem:** every GitHub Actions run since the first push had failed (failure emails). Tests passed locally but failed on Linux CI.
+- **Cause:** `index.test.ts` replaced `./result` with Bun's `mock.module`, which is process-wide. When the test files ran in one process on CI, `result.test.ts` got the mock instead of the real grader.
+- **Fix:**
+  - `result.ts` exports a replaceable `grader` object; the API tests override `grader.calculateResult` and restore it, with no module mock.
+  - CI moved to `actions/checkout@v5`, and Bun is pinned to 1.3.11 to match local and Docker.
+- **How verified:** 47/47 tests locally; GitHub Actions run `39312109957` succeeded.
+- **AI assistance:** Claude Code diagnosed and fixed it.
+
 ---
 
 ## 5. Planned fixes (status tracker)
