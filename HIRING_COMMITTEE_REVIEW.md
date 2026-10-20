@@ -1,5 +1,12 @@
 # AI Interviewer — Hiring Committee Review
 
+> **⚠ Historical document (August 2026).** This review describes an **older version** of the project and is kept as a record of where it started. Much of it no longer matches the code. It mentions Deepgram, Gemini, `index2.js`, `APITester.tsx`, `411` status codes, hard-coded `localhost`, "zero tests / no CI / no Docker / no auth" and an unfixed grading race; none of those apply today.
+>
+> **Current state:**
+> - **Code:** [README.md](README.md) and [PROJECT-DEEP-DIVE.md](PROJECT-DEEP-DIVE.md).
+> - **What changed and when:** [PROJECT-HISTORY.md](PROJECT-HISTORY.md).
+> - **Changes since the review:** realtime transcription via OpenAI, grading via OpenRouter, an anonymous-session ownership model, rate limits, an explicit interview lifecycle, 47 tests with CI, and Docker.
+
 Single-project resume/engineering audit, based on a direct read of the repository (no git history exists to inspect — this is the repo as it sits on disk).
 
 Full formatted version: https://claude.ai/code/artifact/10876f4d-78e9-4fb9-af99-f48f07dab765

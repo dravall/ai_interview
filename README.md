@@ -22,10 +22,19 @@ interview over WebRTC, and grades the transcript when it's done.
    (with backoff) if the call drops or the session expires — the new session
    is seeded with the transcript so far, so the interviewer picks up where it
    left off.
-3. **Grading** — once the interview ends, the results page polls the backend
-   every 5s. The backend sends the full transcript to Qwen via OpenRouter,
-   constrained to a JSON schema (validated with Zod), and gets back a score out of 10 plus written
-   feedback.
+3. **Ending** — clicking End first asks OpenAI to transcribe any answer still
+   in progress, then calls `POST /api/v1/interview/:id/end`. The backend waits
+   up to 5s for the call's last transcript lines to be saved before marking the
+   interview `Ended` (`Pre → InProgress → Ended → Grading → Done | Failed`).
+   If the tab is just closed, the sideband ends it after a 30s grace period
+   for reconnects.
+4. **Grading** — the results page polls the backend every 5s. The first poll
+   after the interview has ended claims it atomically (so concurrent polls
+   can't each pay for a grading call) and sends the transcript to Qwen via
+   OpenRouter, under a scoring rubric, constrained to a JSON schema (validated
+   with Zod), and gets back a score out of 10 plus written feedback. A grading
+   lease recovers from a crash mid-grading; after 3 failed attempts the page
+   offers a manual retry.
 
 ### Setup
 
@@ -89,7 +98,7 @@ bun run test          # apps/backend: bun test
 
 `apps/backend`'s test suite has two layers:
 - **Unit tests** (`types.test.ts`, `result.test.ts`, `realtime.test.ts`, `sideband.test.ts`) — no network, no DB, run anywhere.
-- **Integration tests** (`index.test.ts`) — hit the real Express app + Postgres via `supertest`, with `scrapers/github.ts` and `result.ts` mocked so no real GitHub/OpenRouter calls happen.
+- **Integration tests** (`index.test.ts`) — hit the real Express app + Postgres via `supertest`, with `scrapers/github.ts` mocked and grading swapped out through the replaceable `grader` object, so no real GitHub/OpenRouter calls happen. (Not `mock.module` for `result.ts`: Bun's module mocks are process-wide and would leak into `result.test.ts`.)
 
 Locally the tests use a separate database, `ai_interviewer_test`, set in `apps/backend/.env.test` (Bun loads it automatically under `bun test`), so test rows never land in your dev data. Create and migrate it once, with Postgres running:
 
@@ -115,8 +124,13 @@ CI (`.github/workflows/ci.yml`) runs all of the above against a throwaway Postgr
    - **mute**: while muted, nothing you say gets a reply;
    - **reconnect**: in DevTools → Network, go offline for ~10s and back — the
      page shows "Reconnecting…" and the interviewer resumes the same interview;
-   - **End interview** releases the mic (the browser's mic indicator goes off)
-     and the results page shows a transcript with both sides.
+   - the mic stays off until the greeting has finished, so the interviewer
+     doesn't restart its greeting after hearing itself;
+   - pausing to think mid-answer doesn't make the interviewer jump in;
+   - **End interview** releases the mic (the browser's mic indicator goes off);
+     the results page briefly shows "Finishing your transcript…", then a
+     transcript with both sides in the order they were spoken — including an
+     answer you were still giving when you clicked End.
 
 Backend logs show `Sideband connected (interview …, call rtc_…)` per call.
 To sanity-check the key and model without a browser:
@@ -145,8 +159,26 @@ This runs `bunx prisma migrate deploy` automatically on backend boot, so a fresh
 
 This started as a build-along of
 [Harkirat Singh's AI Interviewer video](https://www.youtube.com/watch?v=iNJ7z4YLQFk),
-extended since then — most notably a fix for a grading race condition where
-concurrent result polls could each trigger a separate (paid) OpenRouter call.
+extended since then. Most notably:
+- an explicit interview lifecycle, so grading never runs on a half-finished
+  transcript;
+- an atomic grading claim with a lease and retry cap (concurrent result polls
+  used to each trigger a separate, paid OpenRouter call);
+- prompt-injection-resistant grading;
+- sideband reconnects and idempotent, speech-ordered transcripts;
+- session ownership, per-endpoint rate limits and security headers.
+
+Not production-ready yet: there are no accounts (so per-IP rate limits are
+the only cost control), and transcript capture and rate limits live in one
+process's memory.
+
+### Docs
+
+- [PROJECT-HISTORY.md](PROJECT-HISTORY.md): what changed, when, and how it was verified.
+- [ARCHITECTURE.md](ARCHITECTURE.md): diagrams, components, the full interview flow and the lifecycle.
+- [PROJECT-DEEP-DIVE.md](PROJECT-DEEP-DIVE.md): detailed analysis, including every bug found and how it was fixed.
+- [INTERVIEW-PREP.md](INTERVIEW-PREP.md), [LEARNING-PATH.md](LEARNING-PATH.md): explaining the project.
+- [HIRING_COMMITTEE_REVIEW.md](HIRING_COMMITTEE_REVIEW.md): historical (Aug 2026); describes an older version.
 
 `apps/backend/experiments/linkedin-scraper.js` is an unfinished, unwired
 experiment — a Playwright-based LinkedIn profile scraper meant to eventually
