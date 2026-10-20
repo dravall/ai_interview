@@ -8,7 +8,7 @@
 
 ## 1. The honest summary (say this if asked)
 
-> "This started as a build-along of Harkirat Singh's AI Interviewer video in May–June 2026. I then hardened it in August: session-based ownership, rate limiting, a fix for a grading race condition, tests, CI and Docker. In October I switched grading to OpenRouter, moved the voice call to OpenAI's ephemeral client-secret flow with `gpt-realtime-2.1-mini`, and added reconnection, mute and an accessible redesign. I pair-programmed the October work with Claude Code. The project wasn't under version control until October 19, 2026, so the git history starts then. The commits are grouped by area, and this file records the earlier timeline and the evidence for it."
+> "This started as a build-along of Harkirat Singh's AI Interviewer video in May–June 2026. I then hardened it in August: session-based ownership, rate limiting, a fix for a grading race condition, tests, CI and Docker. In October I switched grading to OpenRouter, moved the voice call to OpenAI's ephemeral client-secret flow with `gpt-realtime-2.1-mini`, and added reconnection, mute and an accessible redesign. On October 19–20, working with Claude Code, I audited the whole project, documented every bug we found, and fixed them in four phases, one commit per fix: an explicit interview lifecycle, a grading lease and retry cap, injection-resistant grading, sideband reconnects, ordering and idempotency, and security fixes, with the tests going from 19 to 47. I tested the voice behaviour live myself and made the key decisions: an explicit End, the 3-attempt retry cap, and closing interviews that have no owner. The project wasn't under version control until October 19, 2026, so the git history starts then. The commits are grouped by area, and this file records the earlier timeline and the evidence for it."
 
 ---
 
@@ -30,6 +30,7 @@ There was **no git repository before 2026-10-19**, so dates come from the two so
 | **Oct 16, 2026** | Verified: 19/19 tests with Postgres; client secret minted; HTTP smoke test (200 owner / 403 stranger / 400 bad call id) | session transcript | High |
 | **Oct 19, 2026** | Frontend redesign from a Claude Design handoff (tokens, voice tiles, status pill, a11y, light/dark, mobile); interviewer prompt rewritten; deep-dive reports written; **git initialised and history created**. Pair-programmed with Claude Code. | files dated Oct 19; this repo's commits | High |
 | **Oct 19, 2026** | Verified: live voice call. The backend logged `Sideband connected (… call rtc_…)`; 7 candidate + 6 interviewer messages saved; user confirmed the redesign visually | session transcript | High |
+| **Oct 19–20, 2026** | Audit fixes, Phases 1–4 (fixes 1–18), plus CI fixed; 47/47 tests, CI green. Pair-programmed with Claude Code; live voice tests by me | the fix commits on `main`; §4 and §5 below; GitHub Actions runs | High |
 
 **Fill in yourself:** which parts of the May–August work you wrote by hand vs. followed from the video vs. had AI help with. Only you know this, and interviewers often ask.
 - Tutorial-provided: _…_
@@ -153,6 +154,21 @@ AI assistance: none | Claude Code (what it did) | …
 - **How verified:** 47/47 tests locally; GitHub Actions run `39312109957` succeeded.
 - **AI assistance:** Claude Code diagnosed and fixed it.
 
+### 2026-10-20 — Phase 4: cleanup and docs (2 commits)
+- **Commits:**
+  - `08772be`: remove dead template code and unused dependencies (fix 15)
+  - `aeefc03`: bring the docs up to date with the fixed code (fix 16)
+- **What:**
+  - Removed: `packages/ui`, the frontend `/api/hello` template routes, the unused `<Toaster>` (and the `sonner` dependency), unused shadcn `card`/`select`/`textarea`, `react.svg`, the Next.js ESLint config and tsconfigs (and `@next/eslint-plugin-next`), `apps/backend/pnpm-lock.yaml`, the empty `.claude/` folder. `experiments/linkedin-scraper.js` kept, labelled.
+  - `HIRING_COMMITTEE_REVIEW.md` marked historical.
+  - The four reports and the README now describe the fixed code. The deep-dive's bug list keeps each original finding as the "before", with a Status line naming the fix commit.
+  - Added the interview lifecycle diagram to `ARCHITECTURE.md` (the code comment in `index.ts` already pointed to it).
+- **How verified:**
+  - Lint, type checks and the production build pass with the files removed; 47/47 tests.
+  - Every doc claim about tests, migrations and routes was checked against the code. One wrong claim was caught: the concurrency test fires three polls, not two.
+  - All cross-document links resolve.
+- **AI assistance:** Claude Code made the changes and wrote the doc updates.
+
 ---
 
 ## 5. Planned fixes (status tracker)
@@ -175,8 +191,9 @@ From the fix plan; details and reasoning in [PROJECT-DEEP-DIVE.md §18](PROJECT-
 | 12 | Proxy-aware rate limits, separate buckets | B9 | 3 | ✅ done | `ea323e3` |
 | 13 | Deny interviews without an owner | B12 | 3 | ✅ done | `416c5fd` |
 | 14 | Basic security headers | — | 3 | ✅ done | `57af44e` |
-| 15 | Remove dead files (`packages/ui`, template routes, …); `image.png` already gone | B13 | 4 | ☐ planned (image.png ✔) | |
-| 16 | Mark `HIRING_COMMITTEE_REVIEW.md` historical; refresh README and reports | D1 | 4 | ☐ planned | |
+| 15 | Remove dead files (`packages/ui`, template routes, …); `image.png` already gone | B13 | 4 | ✅ done | `08772be` |
+| 16 | Mark `HIRING_COMMITTEE_REVIEW.md` historical; refresh README and reports | D1 | 4 | ✅ done | `aeefc03` |
+| — | CI failing on every push (module mock leaking between test files) | — | — | ✅ done | `610326d` |
 | — | Found in live testing: interviewer cut answers off and reacted to noise | — | 2 | ✅ done | `7dce632` |
 | — | Found in live testing: echo restarted the greeting; answer cut off by End not transcribed | — | 2 | ✅ done | `674efb4` |
 | 17 | Point tests at a separate database (they currently write rows into the dev DB) | — | 3 | ✅ done | `e80d432` |
